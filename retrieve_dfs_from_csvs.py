@@ -14,7 +14,7 @@ import matplotlib.pyplot as plt
 
 def load_and_combine_archive_csv_to_df():
     for csv in ['CSM', 'CSF', 'FED']:
-        filepath = 'C:\\Users\\codyt\\Documents\\DSCI 799 - Capstone\\Data\\Archive_' + csv + '.csv'
+        filepath = '.\\Data\\Archive_' + csv + '.csv'
         temp_df = pd.read_csv(filepath)
         temp_df['Shop'] = csv
         if csv == 'CSM':
@@ -26,7 +26,7 @@ def load_and_combine_archive_csv_to_df():
 
 
 def load_production_worksheet_csv_to_df():
-    filepath = 'C:\\Users\\codyt\\Documents\\DSCI 799 - Capstone\\Data\\production_worksheet.csv'
+    filepath = '.\\Data\\production_worksheet.csv'
     df = pd.read_csv(filepath)
     
     cutoff_idx = df.index[df['2'] == 'Add new lines above here'][0]
