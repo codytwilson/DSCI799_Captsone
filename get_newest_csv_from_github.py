@@ -31,7 +31,7 @@ for file in files:
     # Check if the request was successful (HTTP status code 200)
     if response.status_code == 200:
         # Specify the local file path where you want to save the downloaded file
-        local_dir = "C:\\Users\\codyt\\Documents\\DSCI 799 - Capstone\\Data\\"
+        local_dir = ".\\data\\"
         local_file_path = local_dir + file
         
         # rename the old file if it exists so that the new one doesnt overwrite
