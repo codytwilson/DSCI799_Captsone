@@ -32,6 +32,7 @@ def load_production_worksheet_csv_to_df():
     cutoff_idx = df.index[df['2'] == 'Add new lines above here'][0]
     
     df = df.loc[:cutoff_idx - 1,:]
+    
     return df
    
  
@@ -48,7 +49,14 @@ def get_production_worksheet_boundaries(df):
     last_col = headers.index[headers.str.strip() == ''][0]
 
     return (header_index, last_col)    
- 
+
+def repeatable_categorical_identity_cleanup(df):
+    df['Shop'] = df['Shop'].str.strip()
+    df['Sequence'] = df['Sequence'].fillna('')
+    df['Job #'] = pd.to_numeric(df['Job #'])
+    df = df[df['Shop'].isin(['CSM','FED','CSF'])]
+    df = df.set_index(['Shop','Job #','Sequence'])
+    return df
     
 def get_job_data_from_production_worksheet(df):
     bounds = get_production_worksheet_boundaries(df)
@@ -71,8 +79,12 @@ def get_job_data_from_production_worksheet(df):
                                   'Remaining Hrs.',
                                   'Complete',
                                   'Headcount'])
+    
+    df_out = repeatable_categorical_identity_cleanup(df_out)
     # cleanup the shop column
-    df_out['Shop'] = df_out['Shop'].str.strip()
+    # df_out['Shop'] = df_out['Shop'].str.strip()
+    # make nan empty string for sequence
+    # df_out['Sequence'] = df_out['Sequence'].fillna('')
     # convert HPT to numbers
     df_out['HPT'] = df_out['HPT'].replace('\,','', regex=True)
     df_out['HPT'] = pd.to_numeric(df_out['HPT'])
@@ -83,7 +95,7 @@ def get_job_data_from_production_worksheet(df):
     df_out['ReqHours'] = df_out['ReqHours'].replace('\,','', regex=True)
     df_out['ReqHours'] = pd.to_numeric(df_out['ReqHours'])
     
-    
+    # df_out = df_out.set_index(['Job #','Sequence','Shop'])
     # spit it out
     return df_out
 
@@ -119,16 +131,30 @@ def get_timeline_data_from_production_worksheet(df):
     df_narrower = df_narrower.iloc[bounds[0]+1:, :]
     # replace the headers
     df_narrower.columns = headers
-    # cleanup the shop column
-    df_narrower['Shop'] = df_narrower['Shop'].str.strip()
-    # before replacing the strings to numbers, lets change NAN to zero
-    df_narrower.iloc[:, 3:] = df_narrower.iloc[:, 3:].fillna(0)
+    df_narrower = df_narrower.rename(columns={'Seq. #':'Sequence'})
+    df_narrower = repeatable_categorical_identity_cleanup(df_narrower)
+    
+    
+    df_narrower = df_narrower.fillna(0)
     # replace any commas with blanks
-    df_narrower.iloc[:, 3:] = df_narrower.iloc[:, 3:].replace('[^0-9]','', regex=True)
+    df_narrower = df_narrower.replace('[^0-9]','', regex=True)
     # convert the hours to numbers
-    df_narrower.iloc[:, 3:] = df_narrower.iloc[:, 3:].apply(pd.to_numeric, errors='coerce')
+    df_narrower = df_narrower.apply(pd.to_numeric, errors='coerce')
     # and send the remaining shit to zero
-    df_narrower.iloc[:, 3:] = df_narrower.iloc[:, 3:].fillna(0)    
+    df_narrower = df_narrower.fillna(0)     
+    
+    
+    
+    # cleanup the shop column
+    # df_narrower['Shop'] = df_narrower['Shop'].str.strip()
+    # before replacing the strings to numbers, lets change NAN to zero
+    # df_narrower.iloc[:, 3:] = df_narrower.iloc[:, 3:].fillna(0)
+    # # replace any commas with blanks
+    # df_narrower.iloc[:, 3:] = df_narrower.iloc[:, 3:].replace('[^0-9]','', regex=True)
+    # # convert the hours to numbers
+    # df_narrower.iloc[:, 3:] = df_narrower.iloc[:, 3:].apply(pd.to_numeric, errors='coerce')
+    # # and send the remaining shit to zero
+    # df_narrower.iloc[:, 3:] = df_narrower.iloc[:, 3:].fillna(0)    
     # get rid of NaT columns
     df_narrower = df_narrower.loc[:, ~df_narrower.columns.isna()]
     
@@ -136,12 +162,8 @@ def get_timeline_data_from_production_worksheet(df):
 
 
 def get_timeline_data_as_cumsum(timeline_df):
-    # first 3 columns are identification purposes
-    date_columns = timeline_df.columns[3:]
-    # make a copy
-    cumulative_df = timeline_df.copy()
     # Calculate cumulative hours worked for each date column
-    cumulative_df[date_columns] = timeline_df[date_columns].cumsum(axis=1)
+    cumulative_df = timeline_df.cumsum(axis=1)
     
     return cumulative_df
 
@@ -158,6 +180,7 @@ def cleanup_archive_df(df):
     df = df[~((df['Earned Hours'] == 0) & (df['Direct Hours'] == 0))]
     df = df.sort_values(by=['Shop','Timestamp'])
     return df
+
 #%%
 df = load_and_combine_archive_csv_to_df()
 df = cleanup_archive_df(df)
@@ -171,12 +194,28 @@ time_data = get_timeline_data_from_production_worksheet(pw)
 time_data_cumulative = get_timeline_data_as_cumsum(time_data)
 # this represents the amount of work remaining on the job
 
-# they should have the same index
-time_data_remaining = time_data_cumulative.copy()
-# Subtract the Required Hours from the cumulative horus worked
-# negative numbers means amount of future work
-# positive number means overworked the job
-time_data_remaining.iloc[:, 3:] = time_data_cumulative.iloc[:,3:].subtract(job_data['ReqHours'], axis=0)
-# convert any 'overwork' to zero ?
-# time_data_remaining.iloc[:, 3:] = time_data_remaining.iloc[:, 3:].applymap(lambda x: 0 if x > 0 else x)
+# any value over 1 means they have worked more than the allotted amount!
+workload_completed_percentage = time_data_cumulative.divide(job_data['ReqHours'], axis=0)
+
+
+# negative numbers mean gone over in hours!
+workload_remaining_hours = time_data_cumulative.copy()
+to_zero = workload_remaining_hours == 0
+workload_remaining_hours = workload_remaining_hours.subtract(job_data['ReqHours'], axis=0) * -1
+workload_remaining_hours[to_zero] = 0 
+
+
+
+#%% workload by shop
+shop_hours_worked = time_data.groupby('Shop').sum()
+workload_remaining_hours_shop = workload_remaining_hours.groupby('Shop').sum()
+
+
+
+
+
+
+
+#%%
+
 
