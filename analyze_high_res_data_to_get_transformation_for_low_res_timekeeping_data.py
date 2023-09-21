@@ -72,7 +72,7 @@ hr_weekday['PercentageOfMaxWorked'] = hr_weekday['max'] - hr_weekday['min']
 hr_weekday = hr_weekday.reset_index()
 percentage_week_worked_dataset = []
 for weekday in weekdays.keys():
-    print(weekday, weekdays[weekday])
+    # print(weekday, weekdays[weekday])
     percentage_week_worked_dataset.append(hr_weekday[hr_weekday['weekday'] == weekday]['PercentageOfMaxWorked'])
 
 fig1, (ax10, ax11) = plt.subplots(nrows=1, ncols=2, sharey=True)
@@ -92,7 +92,7 @@ hr_weekday['Hours Worked'] = hr_weekday['max'] - hr_weekday['min']
 hr_weekday = hr_weekday.reset_index()
 direct_hours_by_day_dataset = []
 for weekday in weekdays:
-    print(weekday)
+    # print(weekday)
     direct_hours_by_day_dataset.append(hr_weekday[hr_weekday['weekday'] == weekday]['Hours Worked'])
 
 
@@ -189,8 +189,8 @@ WEEKDAY_BREAKDOWN_STATS.loc[WEEKDAY_BREAKDOWN_STATS.index.max()+1] = ['Weekends'
 #%% now look at the breakdown by hour of the day
 
 # round the timestamp hour 
-# highres['TimestampHour'] = highres['Timestamp'].dt.round('H').dt.hour
-highres['TimestampHour'] = highres['Timestamp'].dt.hour
+highres['TimestampHour'] = highres['Timestamp'].dt.round('H').dt.hour
+# highres['TimestampHour'] = highres['Timestamp'].dt.hour
 
 # now we need to get the max direct hours for that weekday 
 maxDirect_byWeekWeekdayHour = highres.groupby(['StartOfWeek','Shop','weekday','TimestampHour']).max()['Direct Hours']
@@ -216,6 +216,7 @@ ratioDirect_byHour = ratioDirect_byHour.rename(columns={'PercentageHoursOfDayCom
 
 hour_breakdown = pd.merge(hour_breakdown, ratioDirect_byHour, left_index=True, right_index=True)
 
+
 # remove any records that don't have a record before them when they are not the start of the day
 fix_diff_value = hour_breakdown[(hour_breakdown['TimestampHour'] != 6) & (hour_breakdown['PercentageOfHoursWorkedByHour'].isna())]
 hour_breakdown = hour_breakdown.drop(index=fix_diff_value.index)
@@ -229,7 +230,7 @@ hour_breakdown['PercentageOfHoursWorkedByHour'] = hour_breakdown['PercentageOfHo
 
 hours_dataset = []
 for hour in custom_order:
-    print(hour)
+    # print(hour)
     chunk = hour_breakdown[hour_breakdown['TimestampHour'] == hour]
     hours_dataset.append(chunk['PercentageOfHoursWorkedByHour'])
 
@@ -238,5 +239,64 @@ ax6.boxplot(hours_dataset)
 ax6.set_xticks(ticks = np.arange(0,24)+1, labels=custom_order)
 ax6.set_xlabel('Hour of Day\n(Hours 0-5 count towards nightshift of previous day)')
 ax6.set_ylabel('Percentage of Days Hours Worked')
-ax6.set_title('Distributions of Day\'s Hours Worked, by Hour')
+ax6.set_title('Distributions of Day\'s Hours Worked, by Hour\n(At what hour of the day are hours worked?)')
+
+
+
+
+
+hour_quantiles_global = np.quantile(hour_breakdown['PercentageOfHoursWorkedByHour'], [0.1,0.9])
+
+hours_dataset_cleaned = []
+for hour in custom_order:
+    # print(hour)
+    chunk = hour_breakdown[hour_breakdown['TimestampHour'] == hour]
+    chunk = chunk[chunk['PercentageOfHoursWorkedByHour'] > hour_quantiles_global[0]]
+    chunk = chunk[chunk['PercentageOfHoursWorkedByHour'] < hour_quantiles_global[1]]
+    hours_dataset_cleaned.append(chunk['PercentageOfHoursWorkedByHour'])
+
+fig7, ax7 = plt.subplots()    
+ax7.boxplot(hours_dataset_cleaned)
+ax7.set_xticks(ticks = np.arange(0,24)+1, labels=custom_order)
+ax7.set_xlabel('Hour of Day\n(Hours 0-5 count towards nightshift of previous day)')
+ax7.set_ylabel('Percentage of Days Hours Worked')
+ax7.set_title('Distributions of Day\'s Hours Worked, by Hour\n(Cleaned with gloabl 80% median)')
+
+
+
+hours_dataset_cleaned = []
+for hour in custom_order:
+    # print(hour)
+    chunk = hour_breakdown[hour_breakdown['TimestampHour'] == hour]
+    local_quantiles = np.quantile(chunk['PercentageOfHoursWorkedByHour'], [0.1,0.9])
+    if hour == 5:
+        local_quantiles = np.quantile(chunk['PercentageOfHoursWorkedByHour'], [0.1,0.8])
+    chunk = chunk[chunk['PercentageOfHoursWorkedByHour'] > local_quantiles[0]]
+    chunk = chunk[chunk['PercentageOfHoursWorkedByHour'] < local_quantiles[1]]
+    hours_dataset_cleaned.append(chunk['PercentageOfHoursWorkedByHour'])
+
+fig7, ax7 = plt.subplots()    
+ax7.boxplot(hours_dataset_cleaned)
+ax7.set_xticks(ticks = np.arange(0,len(hours_dataset_cleaned))+1, labels=custom_order)
+ax7.set_xlabel('Hour of Day\n(Hours 0-5 count towards nightshift of previous day)')
+ax7.set_ylabel('Percentage of Days Hours Worked')
+ax7.set_title('Distributions of Day\'s Hours Worked, by Hour\n(Cleaned with Local 80% median)')
+
+
+
+
+
+
+HOURLY_BREAKDOWN_STATS = pd.DataFrame(data=custom_order, columns=['Hour'])
+hour_stats = hour_breakdown[['TimestampHour','PercentageOfHoursWorkedByHour']].groupby(['TimestampHour']).agg(['mean','median','std'])
+hour_stats.columns = hour_stats.columns.droplevel(0)
+HOURLY_BREAKDOWN_STATS = pd.merge(HOURLY_BREAKDOWN_STATS, hour_stats, left_on=['Hour'], right_index=True, how='left')
+
+
+HOURLY_BREAKDOWN_STATS.loc[HOURLY_BREAKDOWN_STATS.index.max()+1] = ['All Days', hour_breakdown['PercentageOfHoursWorkedByHour'].mean(), hour_breakdown['PercentageOfHoursWorkedByHour'].median(), hour_breakdown['PercentageOfHoursWorkedByHour'].std()]
+hour_breakdown_hours = hour_breakdown[hour_breakdown['weekday'].isin([1,2,3,4,5])]
+HOURLY_BREAKDOWN_STATS.loc[HOURLY_BREAKDOWN_STATS.index.max()+1] = ['Weekdays', hour_breakdown_hours['PercentageOfHoursWorkedByHour'].mean(), hour_breakdown_hours['PercentageOfHoursWorkedByHour'].median(), hour_breakdown_hours['PercentageOfHoursWorkedByHour'].std()]
+hour_breakdown_weekends = hour_breakdown[~hour_breakdown['weekday'].isin([1,2,3,4,5])]
+HOURLY_BREAKDOWN_STATS.loc[HOURLY_BREAKDOWN_STATS.index.max()+1] = ['Weekends', hour_breakdown_weekends['PercentageOfHoursWorkedByHour'].mean(), hour_breakdown_weekends['PercentageOfHoursWorkedByHour'].median(), hour_breakdown_weekends['PercentageOfHoursWorkedByHour'].std()]
+
 
