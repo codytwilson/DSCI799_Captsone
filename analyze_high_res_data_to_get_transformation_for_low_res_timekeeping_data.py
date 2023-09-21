@@ -189,11 +189,12 @@ WEEKDAY_BREAKDOWN_STATS.loc[WEEKDAY_BREAKDOWN_STATS.index.max()+1] = ['Weekends'
 #%% now look at the breakdown by hour of the day
 
 # round the timestamp hour 
-highres['TimestampHour'] = highres['Timestamp'].dt.round('H').dt.hour
-# highres['TimestampHour'] = highres['Timestamp'].dt.hour
+# highres['TimestampHour'] = highres['Timestamp'].dt.round('H').dt.hour
+highres['TimestampHour'] = highres['Timestamp'].dt.hour
 
 # now we need to get the max direct hours for that weekday 
 maxDirect_byWeekWeekdayHour = highres.groupby(['StartOfWeek','Shop','weekday','TimestampHour']).max()['Direct Hours']
+maxDirect_byWeekWeekday = highres.groupby(['StartOfWeek','Shop','weekday']).max()['Direct Hours']
 # then transform the max at that hour to a ratio
 hour_breakdown = maxDirect_byWeekWeekdayHour / maxDirect_byWeekWeekday
 hour_breakdown = hour_breakdown.rename('PercentageHoursOfDayCompleted')
@@ -240,7 +241,7 @@ ax6.set_xticks(ticks = np.arange(0,24)+1, labels=custom_order)
 ax6.set_xlabel('Hour of Day\n(Hours 0-5 count towards nightshift of previous day)')
 ax6.set_ylabel('Percentage of Days Hours Worked')
 ax6.set_title('Distributions of Day\'s Hours Worked, by Hour\n(At what hour of the day are hours worked?)')
-
+ax6.set_ylim((0,0.075))
 
 
 
