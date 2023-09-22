@@ -25,7 +25,7 @@ def load_and_combine_archive_csv_to_df():
     return df
 
 
-def load_and_combine_archive_csv_to_df():
+def temp_count_production_function():
     rowcount = {}
     for shop in ['CSM', 'CSF', 'FED']:
         rowcount[shop] = 0
