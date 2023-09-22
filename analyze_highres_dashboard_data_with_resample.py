@@ -12,7 +12,7 @@ import datetime
 from retrieve_dfs_from_csvs import load_and_combine_archive_csv_to_df, cleanup_archive_df
 import matplotlib.pyplot as plt
 from sklearn.linear_model import LinearRegression
-
+from scipy.stats import ttest_ind
 
 weekdays = {0:'Sunday',
             1:'Monday',
@@ -308,23 +308,6 @@ fig12.autofmt_xdate(rotation=45)
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #%% FInding out the ratio distributions of each weekday Contributing to Week
 
 
@@ -345,28 +328,28 @@ weekly_highres = highres2[['Shop','StartOfWeek','Earned Hours','Direct Hours']].
 weekly_highres = weekly_highres.reset_index(drop=False)
 
 
-daily_weekly = pd.merge(daily_highres.reset_index(), weekly_highres, 
+daily_highres = pd.merge(daily_highres.reset_index(), weekly_highres, 
                         left_on=['Shop','StartOfWeek'], 
                         right_on = ['Shop','StartOfWeek'],
                         how = 'left',
                         suffixes=('',' WeekMax'))
-daily_weekly = daily_weekly.set_index('Timestamp')
+daily_highres = daily_highres.set_index('Timestamp')
 
-daily_weekly['DirectHoursRatio'] = daily_weekly['Direct Hours Day'] / daily_weekly['Direct Hours WeekMax']
-daily_weekly['DirectHoursInterpolatedRatio'] = daily_weekly['Direct Hours Interpolated Day'] / daily_weekly['Direct Hours WeekMax']
+daily_highres['DirectHoursRatio'] = daily_highres['Direct Hours Day'] / daily_highres['Direct Hours WeekMax']
+daily_highres['DirectHoursInterpolatedRatio'] = daily_highres['Direct Hours Interpolated Day'] / daily_highres['Direct Hours WeekMax']
 
 
 agg_stats = {'DirectHoursRatio':['mean','std','median','count'],'DirectHoursInterpolatedRatio':['mean','std','median','count']}
 
-daily_weekly_shop_stats = daily_weekly.groupby(['Shop','weekday']).agg(agg_stats)
-daily_weekly_stats = daily_weekly.groupby('weekday').agg(agg_stats)
+daily_highres_shop_stats = daily_highres.groupby(['Shop','weekday']).agg(agg_stats)
+daily_highres_stats = daily_highres.groupby('weekday').agg(agg_stats)
 
 
 
 
 
 
-
+''' Daily Hours '''
 fig14, ax14 = plt.subplots()
 fig14_dataset = []
 for day in np.arange(0,7):
@@ -379,12 +362,37 @@ ax14.set_xticks(ticks = [i+1 for i in weekdays.keys()], labels=[i[:3] for i in w
 ax14.set_title('Hours Worked by Day of Week')
 ax14.set_ylabel('Number of Hours')
 
+
 fig15, ax15 = plt.subplots()
 fig15_dataset = []
 ax15.violinplot(fig14_dataset)
 ax15.set_xticks(ticks = [i+1 for i in weekdays.keys()], labels=[i[:3] for i in weekdays.values()])
 ax15.set_title('Hours Worked by Day of Week')
 ax15.set_ylabel('Number of Hours')
+
+
+''' RATIO Daily/Weekly '''
+fig16, ax16 = plt.subplots()
+fig16_dataset = []
+for day in np.arange(0,7):
+    chunk = daily_highres[daily_highres['weekday'] == day]
+    chunk = chunk[chunk['DirectHoursInterpolatedRatio'] > 0]
+    fig16_dataset.append(chunk['DirectHoursInterpolatedRatio'])
+
+ax16.boxplot(fig16_dataset)
+ax16.set_xticks(ticks = [i+1 for i in weekdays.keys()], labels=[i[:3] for i in weekdays.values()])
+ax16.set_title('Ratio Of Weekly Hours Worked By Day')
+ax16.set_ylabel('Ratio of Day Hours / Week Hours')
+
+
+fig17, ax17 = plt.subplots()
+fig17_dataset = []
+ax17.violinplot(fig16_dataset)
+ax17.set_xticks(ticks = [i+1 for i in weekdays.keys()], labels=[i[:3] for i in weekdays.values()])
+ax17.set_title('Ratio Of Weekly Hours Worked By Day')
+ax17.set_ylabel('Ratio of Day Hours / Week Hours')
+
+
 
 #%% Finding out the ratio distributions of each Hour contributing to Day
 
@@ -393,6 +401,8 @@ hourly_highres[['Direct Hours Hour',
                'Earned Hours Hour',
                'Direct Hours Interpolated Hour',
                'Earned Hours Interpolated Hour']] = hourly_highres.groupby(['Shop','StartOfWeek']).diff()[['Direct Hours','Earned Hours','Direct Hours Interpolated','Earned Hours Interpolated']]
+hourly_highres['Direct Hours Interpolated Hour'] = hourly_highres['Direct Hours Interpolated Hour'].fillna(hourly_highres['Direct Hours Interpolated'])
+hourly_highres['Earned Hours Interpolated Hour'] = hourly_highres['Earned Hours Interpolated Hour'].fillna(hourly_highres['Earned Hours Interpolated'])
 
 
 hourly_highres['Direct Hours Interpolated Hour PCTCHANGE'] = hourly_highres.groupby(['Shop','StartOfWeek']).pct_change()['Direct Hours Interpolated Hour'].replace([np.inf, -np.inf], np.nan)
@@ -401,68 +411,183 @@ hourly_highres['Direct Hours Interpolated Hour PCTCHANGE'] = hourly_highres.grou
 # hourly_highres['Direct Hours Interpolated Hour'] = hourly_highres['Direct Hours Interpolated Hour'].fillna(hourly_highres['Direct Hours Interpolated'])
 # hourly_highres['Earned Hours Interpolated Hour'] = hourly_highres['Earned Hours Interpolated Hour'].fillna(hourly_highres['Earned Hours Interpolated'])
 
-plt.hist(hourly_highres['Direct Hours Interpolated Hour PCTCHANGE'], bins=[-10,-5,-1,-0.1,,0.1,1,5,10])
+fig999, ax999 = plt.subplots()
+ax999.hist(hourly_highres['Direct Hours Interpolated Hour PCTCHANGE'].abs(), bins=[0.01,0.1,1,10])
+ax999.set_xscale('log')
+ax999.set_title('Distribution of PCT Change in Hour over Hour Direct Hours')
 
 
 
-
-hourly_highres['Timestamp'] = hourly_highres.index
-hourly_highres['Year'] = hourly_highres['Timestamp'].dt.year
-hourly_highres['Month'] = hourly_highres['Timestamp'].dt.month
-hourly_highres['Day'] = hourly_highres['Timestamp'].dt.day
-hourly_highres['Hour'] = hourly_highres['Timestamp'].dt.hour
-
-daily_highres['Timestamp'] = daily_highres.index
-daily_highres['Year'] = daily_highres['Timestamp'].dt.year
-daily_highres['Month'] = daily_highres['Timestamp'].dt.month
-daily_highres['Day'] = daily_highres['Timestamp'].dt.day
-
+hourly_highres = hourly_highres.reset_index(drop=False)
 hourly_highres = pd.merge(hourly_highres, 
-                          daily_highres[['Shop','Year','Month','Day','Direct Hours','Earned Hours']], 
+                          daily_highres[['Shop','StartOfWeek','weekday','Direct Hours Day','Earned Hours Day','Direct Hours Interpolated Day','Earned Hours Interpolated Day']], 
                           how='left',
-                          left_on=['Shop','Year','Month','Day'], 
-                          right_on=['Shop','Year','Month','Day'],
+                          left_on=['Shop','StartOfWeek','weekday'], 
+                          right_on=['Shop','StartOfWeek','weekday'],
                           suffixes=('',' DayMax'))
 
-hourly_highres['DirectHoursRatio'] = hourly_highres['Direct Hours'] / hourly_highres['Direct Hours DayMax']
-hourly_highres['DirectHoursInterpolatedRatio'] = hourly_highres['Earned Hours'] / hourly_highres['Earned Hours DayMax']
+
+hourly_highres['DirectHoursRatio'] = hourly_highres['Direct Hours Hour'] / hourly_highres['Direct Hours Day']
+hourly_highres['DirectHoursInterpolatedRatio'] = hourly_highres['Direct Hours Interpolated Hour'] / hourly_highres['Direct Hours Interpolated Day']
+hourly_highres['DirectHoursRatio'] = hourly_highres['DirectHoursRatio'].replace([np.inf, -np.inf], np.nan)
+hourly_highres['DirectHoursInterpolatedRatio'] = hourly_highres['DirectHoursInterpolatedRatio'].replace([np.inf, -np.inf], 0)
+hourly_highres['Hour'] = hourly_highres['Timestamp'].dt.hour
 hourly_highres = hourly_highres.set_index('Timestamp')
+
+
+
+
+# plt.hist(hourly_highres[~hourly_highres['DirectHoursInterpolatedRatio'].isna()]['DirectHoursInterpolatedRatio'], bins=[-1000,-10,0,10,1000])
+directHoursInterpolateRatio_quantiles = np.quantile(hourly_highres[~hourly_highres['DirectHoursInterpolatedRatio'].isna()]['DirectHoursInterpolatedRatio'], [0.01,0.1,0.25,0.5,0.75,0.9,0.99])
+directHoursInterpolateRatio_quantiles_filter = np.quantile(hourly_highres[~hourly_highres['DirectHoursInterpolatedRatio'].isna()]['DirectHoursInterpolatedRatio'], [0.06,0.8])
+
+
+
+agg_stats = {'DirectHoursRatio':['mean','std','median','count'],'DirectHoursInterpolatedRatio':['mean','std','median','count']}
+hourly_highres_no_outliers = hourly_highres[(hourly_highres['DirectHoursInterpolatedRatio'] > directHoursInterpolateRatio_quantiles_filter[0]) & (hourly_highres['DirectHoursInterpolatedRatio'] < directHoursInterpolateRatio_quantiles_filter[1])]
+
+hourly_highres_shop_stats = hourly_highres_no_outliers.groupby(['Shop','Hour']).agg(agg_stats)
+hourly_highres_stats = hourly_highres_no_outliers.groupby('Hour').agg(agg_stats)
 
 
 
 
 custom_order = list(np.arange(6,24,1)) + list(np.arange(0,6))
 
-
-fig16, ax16 = plt.subplots()
-fig16_dataset = []
+''' Hours by Hour '''
+fig18, ax18 = plt.subplots()
+fig18_dataset = []
 for hour in custom_order:
-    chunk = hourly_highres[hourly_highres['Hour'] == hour]
+    chunk = hourly_highres[hourly_highres.index.hour == hour]
     chunk = chunk[chunk['Direct Hours Interpolated Hour'] > 0]
     chunk = chunk[chunk['Direct Hours Interpolated Hour'] < 75]
     # chunk = chunk[chunk['Direct Hours Interpolated Hour PCTCHANGE'].abs() < 0.2]
-    fig16_dataset.append(chunk['Direct Hours Interpolated Hour'])
+    fig18_dataset.append(chunk['Direct Hours Interpolated Hour'])
 
-ax16.boxplot(fig16_dataset)
-ax16.set_xticks(ticks = np.arange(0, len(fig16_dataset))+1, labels=custom_order)
-ax16.set_title('Hours Worked of Day by Hour')
-ax16.set_ylabel('Number of Hours')
-ax16.set_xlabel('Hour of Day')
+ax18.boxplot(fig18_dataset)
+ax18.set_xticks(ticks = np.arange(0, len(fig18_dataset))+1, labels=custom_order)
+ax18.set_title('Hours Worked of Day by Hour')
+ax18.set_ylabel('Number of Hours')
+ax18.set_xlabel('Hour of Day')
 
-fig17, ax17 = plt.subplots()
-fig17_dataset = []
-ax17.violinplot(fig16_dataset)
-ax17.set_xticks(ticks = np.arange(0, len(fig16_dataset))+1, labels=custom_order)
-ax17.set_title('Hours Worked of Day by Hour')
-ax17.set_ylabel('Number of Hours')
-ax16.set_xlabel('Hour of Day')
-
+fig19, ax19 = plt.subplots()
+ax19.violinplot(fig18_dataset)
+ax19.set_xticks(ticks = np.arange(0, len(fig18_dataset))+1, labels=custom_order)
+ax19.set_title('Hours Worked of Day by Hour')
+ax19.set_ylabel('Number of Hours')
+ax19.set_xlabel('Hour of Day')
 
 
 
 
 
-#%% Now we need to look at the ratios instead of the number of hours 
+''' Ratio of Hours by Hour'''
+
+fig20, ax20 = plt.subplots()
+fig20_dataset = []
+for hour in custom_order:
+    chunk = hourly_highres[hourly_highres.index.hour == hour]
+    chunk = chunk[~chunk['DirectHoursInterpolatedRatio'].isna()]
+    chunk = chunk[chunk['DirectHoursInterpolatedRatio'] > directHoursInterpolateRatio_quantiles_filter[0]]
+    chunk = chunk[chunk['DirectHoursInterpolatedRatio'] < directHoursInterpolateRatio_quantiles_filter[1]]
+    # chunk = chunk[chunk['DirectHoursInterpolatedRatio'] > 0]
+    # chunk = chunk[chunk['Direct Hours Interpolated Hour PCTCHANGE'].abs() < 0.2]
+    fig20_dataset.append(chunk['DirectHoursInterpolatedRatio'])
+
+ax20.boxplot(fig20_dataset)
+ax20.set_xticks(ticks = np.arange(0, len(fig20_dataset))+1, labels=custom_order)
+ax20.set_title('Ratio Of Daily Hours Worked By Hour Of Day')
+ax20.set_ylabel('Ratio of Day\'s Hour Worked By Hour')
+ax20.set_xlabel('Hour of Day')
+
+fig21, ax21 = plt.subplots()
+ax21.violinplot(fig20_dataset, showextrema=False, showmeans=True, widths=0.7)
+# ax21.violinplot(fig20_dataset, showextrema=False, showmeans=True, widths=0.7, quantiles=[[0.1,0.9]]*24)
+ax21.set_xticks(ticks = np.arange(0, len(fig20_dataset))+1, labels=custom_order)
+ax21.set_title('Ratio Of Daily Hours Worked By Hour Of Day')
+ax21.set_ylabel('Ratio of Day\'s Hour Worked By Hour')
+ax21.set_xlabel('Hour of Day')
+
+
+#%% Can we use company averages for day & hour or do we need to use shop level?
+
+
+def test_means(df, test_col, shop):
+    df = df[~df[test_col].isna()]
+    shop_df = df[df['Shop'] == shop].copy()
+    test = ttest_ind(df[test_col], shop_df[test_col])
+    return test[1]
+
+
+test_col = 'DirectHoursInterpolatedRatio'
+
+test_results = {}
+for shop in colors.keys():
+    test_results[shop] = {'Daily':{},'Hourly':{},'Overall':{}}
+    for day in np.arange(0,7):
+        # check to see if the shop's days hours are different from the population's days hours
+        thisday = daily_highres[daily_highres['weekday'] == day]
+        test_results[shop]['Daily'][day] = test_means(thisday.copy(), test_col, shop)
+    for hour in custom_order:
+        # check to see if the shop's hour's hours are different from the populations hour's hours
+        thishour = hourly_highres[hourly_highres['Hour'] == hour]
+        test_results[shop]['Hourly'][hour] = test_means(thishour.copy(), test_col, shop)
+    # check to see if the shop's average daily hours & average hourly hours are different from the population
+    test_results[shop]['Overall'] = {'Daily':test_means(daily_highres.copy(), test_col, shop),
+                                     'Hourly':test_means(hourly_highres.copy(), test_col, shop)}
+    
+test_results
+
+
+
+test_results_daily = pd.DataFrame.from_dict({key: value['Daily'] for key,value in test_results.items()})
+test_results_daily.index.name = 'Weekday'
+test_results_hourly = pd.DataFrame.from_dict({key: value['Hourly'] for key,value in test_results.items()})
+test_results_hourly.index.name = 'Hour'
+test_results_overall = pd.DataFrame.from_dict({key: value['Overall'] for key,value in test_results.items()})
+
+
+stats_columns = (test_col,['mean','std','count'])
+
+test_results_daily_detail = {}
+if (test_results_daily < 0.05).any().any():
+    print('On a hour basis, one of the shops has a different mean {} than the population'.format(test_col))
+    different_means = test_results_daily < 0.05
+    different_means_out = test_results_daily[different_means.any(axis=1)]
+    
+    for shop in different_means_out.columns:
+        hours = list(test_results_daily[test_results_daily[shop] < 0.05].index)
+        shop_means = daily_highres_shop_stats.loc[(shop,hours), stats_columns]
+        pop_means = daily_highres_stats.loc[hours, stats_columns]
+        shop_means.index = shop_means.index.droplevel(0)
+        shop_means.columns = ['LocalMEAN','LocalSTD','LocalCOUNT']
+        pop_means.columns = ['GloablMEAN','GlobalSTD','GloablCOUNT']
+        comparison = pd.merge(shop_means, pop_means, left_index=True, right_index=True)
+        print(comparison)
+        test_results_daily_detail[shop] = comparison  
+    
+    
+test_results_hourly_detail = {}
+if (test_results_hourly < 0.05).any().any():
+    print('On a hour basis, one of the shops has a different mean {} than the population'.format(test_col))
+    different_means = test_results_hourly < 0.05
+    different_means_out = test_results_hourly[different_means.any(axis=1)]
+    
+    for shop in different_means_out.columns:
+        hours = list(test_results_hourly[test_results_hourly[shop] < 0.05].index)
+        shop_means = hourly_highres_shop_stats.loc[(shop,hours), stats_columns]
+        pop_means = hourly_highres_stats.loc[hours, stats_columns]
+        shop_means.index = shop_means.index.droplevel(0)
+        shop_means.columns = ['LocalMEAN','LocalSTD','LocalCOUNT']
+        pop_means.columns = ['GloablMEAN','GlobalSTD','GloablCOUNT']
+        comparison = pd.merge(shop_means, pop_means, left_index=True, right_index=True)
+        print(comparison)
+        test_results_hourly_detail[shop] = comparison
+    
+    
+
+
+
 
 
 
