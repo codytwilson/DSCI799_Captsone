@@ -25,6 +25,18 @@ def load_and_combine_archive_csv_to_df():
     return df
 
 
+def load_and_combine_archive_csv_to_df():
+    rowcount = {}
+    for shop in ['CSM', 'CSF', 'FED']:
+        rowcount[shop] = 0
+        for year in [2020,2021,2022]:
+            filepath = '.\\Data\\' + shop + "_fablisting_" + str(year) + '.csv'
+            temp_df = pd.read_csv(filepath)
+            rowcount[shop] += temp_df.shape[0]
+        
+            
+    return rowcount
+
 def load_production_worksheet_csv_to_df():
     filepath = '.\\Data\\production_worksheet.csv'
     df = pd.read_csv(filepath)
