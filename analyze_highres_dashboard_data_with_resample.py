@@ -590,17 +590,18 @@ if (test_results_hourly < 0.05).any().any():
 
 
 
+#%% send the stats to csvs so I can pick em up later
 
-
-
-
-
-
-
-
-
-
-
-
-
-
+def send_stats_to_csvs():
+    zzz = hourly_highres_stats.copy()
+    zzz = zzz.loc[:,('DirectHoursInterpolatedRatio',['mean','std','count'])]
+    zzz.columns = zzz.columns.get_level_values(1)
+    
+    zzz.to_csv('ratios_hourly.csv')
+    
+    zzz = daily_highres_stats.copy()
+    zzz = zzz.loc[:, ('DirectHoursInterpolatedRatio',['mean','std','count'])]
+    zzz.columns = zzz.columns.get_level_values(1)
+    
+    zzz.to_csv('ratios_daily.csv')
+    
