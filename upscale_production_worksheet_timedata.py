@@ -11,7 +11,6 @@ import numpy as np
 import datetime
 from retrieve_dfs_from_csvs import load_production_worksheet_csv_to_df, get_job_data_from_production_worksheet, get_timeline_data_from_production_worksheet
 
-import time
 
 
 pw = load_production_worksheet_csv_to_df()
