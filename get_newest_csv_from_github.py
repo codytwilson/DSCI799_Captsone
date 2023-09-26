@@ -36,7 +36,7 @@ for file in files:
         
         # rename the old file if it exists so that the new one doesnt overwrite
         if os.path.exists(local_file_path):
-            new_file_name = local_dir + now_str + file
+            new_file_name = local_dir + 'old\\' + now_str +'_'+ file
             os.rename(local_file_path, new_file_name)
             
             
