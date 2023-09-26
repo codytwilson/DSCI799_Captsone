@@ -22,6 +22,7 @@ ratios_hourly = pd.read_csv('.\\ratios_hourly.csv')
 ratios_daily = pd.read_csv('.\\ratios_daily.csv')
 
 
+
 # we need to join the shops together
 time_data = time_data.groupby(level=0).sum()
 # swap columns and rows
@@ -43,8 +44,10 @@ hourly_index = pd.date_range(start=time_data.index.min(), end=time_data.index.ma
 # the last ffill is to fill in that last week that got added via reindex(hourly_index)
 resampled_time_data = time_data.resample('H', label='right').ffill().reindex(hourly_index).ffill()
 
+
 # Step 2: Transform the weekly hours distribution
 # Calculate the distribution for each hour
+
 
 
 
@@ -74,21 +77,6 @@ resampled_time_data2 = resampled_time_data.copy()
 resampled_time_data2['CSM'] = randomize_according_to_distribution(resampled_time_data2['CSM'])
 resampled_time_data2['CSF'] = randomize_according_to_distribution(resampled_time_data2['CSF'])
 resampled_time_data2['FED'] = randomize_according_to_distribution(resampled_time_data2['FED'])
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
