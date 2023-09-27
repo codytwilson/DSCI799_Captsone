@@ -25,17 +25,20 @@ def load_and_combine_archive_csv_to_df():
     return df
 
 
-def temp_count_production_function():
-    rowcount = {}
+def load_and_combine_fablisting_csv_to_df():
+    
     for shop in ['CSM', 'CSF', 'FED']:
-        rowcount[shop] = 0
-        for year in [2020,2021,2022]:
+        for year in [2020,2021,2022,2023]:
             filepath = '.\\Data\\' + shop + "_fablisting_" + str(year) + '.csv'
-            temp_df = pd.read_csv(filepath)
-            rowcount[shop] += temp_df.shape[0]
-        
+            temp_df = pd.read_csv(filepath, index_col=0)
+            temp_df['shop'] = shop
+            temp_df['Timestamp'] = pd.to_datetime(temp_df['Timestamp'], errors='coerce', format='%Y-%m-%d %H:%M:%S')
+            if 'df' not in locals():
+                df = temp_df.iloc[:,:20]
+            else:
+                df = pd.concat([df, temp_df.iloc[:,:20]], ignore_index=True)
             
-    return rowcount
+    return df
 
 def load_production_worksheet_csv_to_df():
     filepath = '.\\Data\\production_worksheet.csv'
@@ -229,5 +232,25 @@ workload_remaining_hours_shop = workload_remaining_hours.groupby('Shop').sum()
 
 
 #%%
+''' verify the headings '''
+fablisting = load_and_combine_fablisting_csv_to_df()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
