@@ -33,6 +33,9 @@ start_date_csf = datetime.datetime(2023,5,21,0,0,0)
 highres = highres[((highres['StartOfWeek'] >= start_date_csm) & (highres['Shop'] == 'CSM')) 
                   | ((highres['StartOfWeek'] >= start_date_fed) & (highres['Shop'] == 'FED'))
                   | ((highres['StartOfWeek'] >= start_date_csf) & (highres['Shop'] == 'CSF'))]
+
+
+
 # remove_anyythin_in_this_hour = 4
 # highres = highres[highres['Timestamp'].dt.hour != remove_anyythin_in_this_hour]
 
@@ -110,22 +113,26 @@ highres2['TimestampShifted'] = highres2.index - datetime.timedelta(hours=4, minu
 # 
 # highres2 = highres2[~ ((highres2['TimestampShifted'].dt.hour == 23) & (highres2['TimestampShifted'].dt.minute > 52))]
 highres2['Timestamp'] = highres2.index
+# we set the index to be shifted b/c once we resample, it will maintain the corrrect day
 highres2 = highres2.set_index(highres2['TimestampShifted'], drop=False)
+# get the start of week 
 highres2['StartOfWeek'] = highres2.apply(figure_StartOfWeek, axis=1)
 
-
-# x = highres2[(highres2['Shop'] == 'FED') & (highres2['StartOfWeek'] >= datetime.datetime(2023,9,10))]
 
 daily_highres = highres2[['Shop','Direct Hours','Earned Hours','weekday','StartOfWeek','Timestamp']].groupby('Shop').resample('D', closed='right').max()
 # this is for troubleshooting so you can see what the max value occurs at
 # daily_highres = highres2[['Shop','Direct Hours','Earned Hours','weekday','StartOfWeek','Timestamp']].groupby('Shop').resample('D', closed='right').max()
 
+# set the index back to timestamp
 highres2 = highres2.set_index('Timestamp')
 
-
+# get rid of the shop column
 daily_highres = daily_highres.drop(columns=['Shop'])
+# reset the index in total so that timestampshifted and shop go into the df
 daily_highres = daily_highres.reset_index()
+# set the timetsamp shifted back into the index - at this point it is no longer shifted, but rather it is the date that the records belong to 
 daily_highres = daily_highres.set_index('TimestampShifted')
+# set the name back to timestamp
 daily_highres.index.name = 'Timestamp'
 
 

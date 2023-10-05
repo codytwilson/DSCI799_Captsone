@@ -15,6 +15,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.model_selection import GridSearchCV
 from sklearn.ensemble import RandomForestRegressor
 import matplotlib.pyplot as plt
+from sklearn.metrics import mean_squared_error
 
 fablisting = load_and_combine_fablisting_csv_to_df()
 fablisting = fablisting[['Timestamp','Job #','Lot #','Lot Name','Quantity','Piece Mark - REV','Weight','Earned Hours','Has Model','shop']]
@@ -69,6 +70,8 @@ fablisting_without_missing = pd.merge(fablisting.copy(), missing_earned_hours, i
 
 # this gets us a timestamp form the datetime apparently
 fablisting_without_missing['kmeansTimestamp'] = fablisting_without_missing['Timestamp'].astype(np.int64) // 10 ** 9
+missing_earned_hours['kmeansTimestamp'] = missing_earned_hours['Timestamp'].astype(np.int64) // 10 ** 9
+
 # get rid of the missing ones
 fablisting_without_missing = fablisting_without_missing[fablisting_without_missing['_merge'] == 'left_only']
 # fablisting_without_missing = fablisting_without_missing[~fablisting_without_missing['Job #'].isin(jobs_to_remove)]
@@ -129,7 +132,7 @@ fablisting_without_missing['Job #'] = jobEncoder.transform(fablisting_without_mi
 
 
 
-rf = RandomForestRegressor(random_state=0)
+rf = RandomForestRegressor(random_state=0, max_features='sqrt')
 rf.fit(fablisting_without_missing[rf_vars], fablisting_without_missing['Earned Hours'])
 
 
@@ -137,13 +140,17 @@ for i in range(0,len(rf_vars)):
     print(rf_vars[i], rf.feature_importances_[i])
 
 
+
+
 fablisting_without_missing['Earned Hours rf'] = rf.predict(fablisting_without_missing[rf_vars])
+
+
+print(f"Score {rf.score(fablisting_without_missing[rf_vars], fablisting_without_missing['Earned Hours'])}")
+print(f"MSE {mean_squared_error(fablisting_without_missing['Earned Hours'], fablisting_without_missing['Earned Hours rf'])}")
+
+
 fablisting_without_missing['shop'] = shopEncoder.inverse_transform(fablisting_without_missing['shop'])
 fablisting_without_missing['Job #'] = jobEncoder.inverse_transform(fablisting_without_missing['Job #'])
-
-
-
-
 
 
 missing_earned_hours['shop'] = shopEncoder.transform(missing_earned_hours['shop'])
