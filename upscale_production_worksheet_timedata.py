@@ -10,7 +10,8 @@ import pandas as pd
 import numpy as np
 import datetime
 from retrieve_dfs_from_csvs import load_production_worksheet_csv_to_df, get_job_data_from_production_worksheet, get_timeline_data_from_production_worksheet
-
+import matplotlib.pyplot as plt 
+import matplotlib.dates as mdates
 
 
 pw = load_production_worksheet_csv_to_df()
@@ -45,8 +46,13 @@ hourly_index = pd.date_range(start=time_data.index.min(), end=time_data.index.ma
 resampled_time_data = time_data.resample('H', label='right').ffill().reindex(hourly_index).ffill()
 
 
-# Step 2: Transform the weekly hours distribution
-# Calculate the distribution for each hour
+''' 
+1) crop to the limiting timeframe of production data
+2) need to look at the weeks that are missing 
+3) outliers
+
+'''
+
 
 
 
@@ -81,13 +87,21 @@ resampled_time_data2['FED'] = randomize_according_to_distribution(resampled_time
 
 
 
+# this is to show that the randomized values are close to the actual weekly
 
+resampled_time_data2_back = resampled_time_data2.resample('W', label='left').sum()
 
-
-
-
-
-
+for shop in time_data.columns:
+    fig, ax = plt.subplots()
+    ax.plot(time_data.index, time_data[shop], marker='.')
+    ax.plot(resampled_time_data2_back.index, resampled_time_data2_back[shop], marker='*', linewidth=0.0)
+    ax.set_ylim((0,4000))
+    ax.set_title(shop + ' Real vs Resampled')
+    date_strings = time_data.index.strftime('%Y-Q%q')
+    ax.set_xlim(time_data.iloc[50].name, time_data.iloc[196].name)
+    ax.legend(['Real','Resampled'])
+    plt.xticks(rotation=45)
+    
 
 
 
