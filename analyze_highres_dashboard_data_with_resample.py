@@ -5,6 +5,7 @@ Created on Wed Sep 20 14:03:21 2023
 @author: cwilson
 """
 
+colors = {'CSM':'tab:blue','CSF':'tab:orange','FED':'tab:green'}
 
 import pandas as pd
 import numpy as np
@@ -33,6 +34,53 @@ start_date_csf = datetime.datetime(2023,5,21,0,0,0)
 highres = highres[((highres['StartOfWeek'] >= start_date_csm) & (highres['Shop'] == 'CSM')) 
                   | ((highres['StartOfWeek'] >= start_date_fed) & (highres['Shop'] == 'FED'))
                   | ((highres['StartOfWeek'] >= start_date_csf) & (highres['Shop'] == 'CSF'))]
+
+
+
+
+highres3 = highres.copy()
+expected_timestamps = pd.date_range(datetime.datetime(2023,5,21,0,0,0), highres3['Timestamp'].max(), freq='15T')
+highres3 = highres3.set_index('Timestamp')
+highres3 = highres3[['Shop','Direct Hours']].groupby('Shop').resample('15T').count()
+highres3 = highres3.drop(columns='Shop')
+highres3 = highres3.reset_index()
+highres3['1'] = highres3['Direct Hours'] > 0
+fig11, ax111 = plt.subplots(nrows=1, ncols=1)
+for shop in colors.keys():
+    chunk = highres3[highres3['Shop'] == shop]
+    chunk = chunk[chunk['Timestamp'] >= datetime.datetime(2023,5,21,0,0,0)]
+    x = chunk['Timestamp']
+    y2 = chunk['1'].cumsum()
+    ax111.plot(x,y2, color=colors[shop])
+    # ax111.scatter(x,y2, s=0.6, color=colors[shop])
+
+chunk['2'] = 1
+ax111.plot(x, chunk['2'].cumsum(), color='k')
+  
+ax111.legend(list(colors.keys()) + ['No Misses'], markerscale=4)
+ax111.set_ylabel('Number of Records')
+fig11.suptitle('15 Minute Interval Records Check')
+fig11.autofmt_xdate(rotation=45)
+
+# TODO: Now calculate how many records I am missing for each of the shops after creating this graphic
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -223,7 +271,6 @@ hourly_highres = hourly_highres.set_index('Timestamp')
 
 # daily_highres['Earned Hours Interpolated'] = daily_highres['Earned Hours'].interpolate(method='time')
 #%% daily resample plots
-colors = {'CSM':'tab:blue','CSF':'tab:orange','FED':'tab:green'}
 
 
 
@@ -239,6 +286,7 @@ for shop in colors.keys():
     chunk = chunk[chunk['StartOfWeek'] >= datetime.date(2023,5,21)]
     x = chunk.index
     y2 = chunk['Direct Hours'].cumsum()
+    # ax111.plot(x,y2, color=colors[shop])
     ax111.scatter(x,y2, s=0.6, color=colors[shop])
     for week in pd.unique(chunk['StartOfWeek']):
         y = chunk[chunk['StartOfWeek'] == week] #/ chunk['Direct Hours']
@@ -251,6 +299,24 @@ ax110.set_ylabel('Weekly Hours')
 ax111.set_ylabel('Cumulative')
 fig11.autofmt_xdate(rotation=45)
 
+
+hourly_highres['1'] = ~ hourly_highres['Direct Hours'].isna()
+fig11, ax111 = plt.subplots(nrows=1, ncols=1)
+for shop in colors.keys():
+    chunk = hourly_highres[hourly_highres['Shop'] == shop]
+    chunk = chunk[chunk['StartOfWeek'] >= datetime.date(2023,5,21)]
+    x = chunk.index
+    y2 = chunk['1'].cumsum()
+    ax111.plot(x,y2, color=colors[shop])
+    # ax111.scatter(x,y2, s=0.6, color=colors[shop])
+
+chunk['2'] = 1
+ax111.plot(x, chunk['2'].cumsum(), color='k')
+  
+ax111.legend(list(colors.keys()) + ['No Misses'], markerscale=4)
+ax111.set_ylabel('Number of Records')
+fig11.suptitle('Hourly Resampled Records Check')
+fig11.autofmt_xdate(rotation=45)
 
 
 
@@ -378,13 +444,17 @@ ax15.set_title('Hours Worked by Day of Week')
 ax15.set_ylabel('Number of Hours')
 
 
-''' RATIO Daily/Weekly '''
+
+
+
+''' RATIO Daily/Weekly NO INFILL'''
 fig16, ax16 = plt.subplots()
 fig16_dataset = []
 for day in np.arange(0,7):
     chunk = daily_highres[daily_highres['weekday'] == day]
-    chunk = chunk[chunk['DirectHoursInterpolatedRatio'] > 0]
-    fig16_dataset.append(chunk['DirectHoursInterpolatedRatio'])
+    chunk = chunk[chunk['DirectHoursRatio'] > 0]
+    
+    fig16_dataset.append(chunk['DirectHoursRatio'])
 
 ax16.boxplot(fig16_dataset)
 ax16.set_xticks(ticks = [i+1 for i in weekdays.keys()], labels=[i[:3] for i in weekdays.values()])
@@ -397,6 +467,30 @@ fig17_dataset = []
 ax17.violinplot(fig16_dataset)
 ax17.set_xticks(ticks = [i+1 for i in weekdays.keys()], labels=[i[:3] for i in weekdays.values()])
 ax17.set_title('Ratio Of Weekly Hours Worked By Day')
+ax17.set_ylabel('Ratio of Day Hours / Week Hours')
+
+
+
+''' RATIO Daily/Weekly w/ linear interpolation infill'''
+fig16, ax16 = plt.subplots()
+fig16_dataset = []
+for day in np.arange(0,7):
+    chunk = daily_highres[daily_highres['weekday'] == day]
+    chunk = chunk[chunk['DirectHoursInterpolatedRatio'] > 0]
+    chunk = chunk[chunk['DirectHoursInterpolatedRatio'] < 0.5]
+    fig16_dataset.append(chunk['DirectHoursInterpolatedRatio'])
+
+ax16.boxplot(fig16_dataset)
+ax16.set_xticks(ticks = [i+1 for i in weekdays.keys()], labels=[i[:3] for i in weekdays.values()])
+ax16.set_title('Ratio Of Weekly Hours Worked By Day\n(Infilled Missing Values via Linear Interpolation)')
+ax16.set_ylabel('Ratio of Day Hours / Week Hours')
+
+
+fig17, ax17 = plt.subplots()
+fig17_dataset = []
+ax17.violinplot(fig16_dataset)
+ax17.set_xticks(ticks = [i+1 for i in weekdays.keys()], labels=[i[:3] for i in weekdays.values()])
+ax17.set_title('Ratio Of Weekly Hours Worked By Day\n(Infilled Missing Values via Linear Interpolation)')
 ax17.set_ylabel('Ratio of Day Hours / Week Hours')
 
 
@@ -443,6 +537,7 @@ hourly_highres = hourly_highres.set_index('Timestamp')
 
 
 
+directHoursRatio_quantiles = np.quantile(hourly_highres[~hourly_highres['DirectHoursRatio'].isna()]['DirectHoursRatio'], [0.05,0.1,0.25,0.5,0.75,0.9])
 
 # plt.hist(hourly_highres[~hourly_highres['DirectHoursInterpolatedRatio'].isna()]['DirectHoursInterpolatedRatio'], bins=[-1000,-10,0,10,1000])
 directHoursInterpolateRatio_quantiles = np.quantile(hourly_highres[~hourly_highres['DirectHoursInterpolatedRatio'].isna()]['DirectHoursInterpolatedRatio'], [0.01,0.1,0.25,0.5,0.75,0.9,0.99])
@@ -486,9 +581,36 @@ ax19.set_xlabel('Hour of Day')
 
 
 
+''' Ratio of Hours by Hour - NOT INFILLED'''
+
+fig20, ax20 = plt.subplots()
+fig20_dataset = []
+for hour in custom_order:
+    chunk = hourly_highres[hourly_highres.index.hour == hour]
+    chunk = chunk[~chunk['DirectHoursRatio'].isna()]
+    # chunk = chunk[chunk['DirectHoursRatio'] > directHoursRatio_quantiles[0]]
+    # chunk = chunk[chunk['DirectHoursRatio'] < directHoursRatio_quantiles[-1]]
+    chunk = chunk[chunk['DirectHoursInterpolatedRatio'] > 0]
+    chunk = chunk[chunk['DirectHoursInterpolatedRatio'] < 1]
+    # chunk = chunk[chunk['Direct Hours Interpolated Hour PCTCHANGE'].abs() < 0.2]
+    fig20_dataset.append(chunk['DirectHoursRatio'])
+
+ax20.boxplot(fig20_dataset)
+ax20.set_xticks(ticks = np.arange(0, len(fig20_dataset))+1, labels=custom_order)
+ax20.set_title('Ratio Of Daily Hours Worked By Hour Of Day')
+ax20.set_ylabel('Ratio of Day\'s Hour Worked By Hour')
+ax20.set_xlabel('Hour of Day')
+
+fig21, ax21 = plt.subplots()
+ax21.violinplot(fig20_dataset, showextrema=False, showmeans=True, widths=0.7)
+# ax21.violinplot(fig20_dataset, showextrema=False, showmeans=True, widths=0.7, quantiles=[[0.1,0.9]]*24)
+ax21.set_xticks(ticks = np.arange(0, len(fig20_dataset))+1, labels=custom_order)
+ax21.set_title('Ratio Of Daily Hours Worked By Hour Of Day')
+ax21.set_ylabel('Ratio of Day\'s Hour Worked By Hour')
+ax21.set_xlabel('Hour of Day')
 
 
-''' Ratio of Hours by Hour'''
+''' Ratio of Hours by Hour - using interpolated'''
 
 fig20, ax20 = plt.subplots()
 fig20_dataset = []
@@ -503,7 +625,7 @@ for hour in custom_order:
 
 ax20.boxplot(fig20_dataset)
 ax20.set_xticks(ticks = np.arange(0, len(fig20_dataset))+1, labels=custom_order)
-ax20.set_title('Ratio Of Daily Hours Worked By Hour Of Day')
+ax20.set_title('Ratio Of Daily Hours Worked By Hour Of Day\n(Infilled Missing Values via Linear Interpolation)')
 ax20.set_ylabel('Ratio of Day\'s Hour Worked By Hour')
 ax20.set_xlabel('Hour of Day')
 
@@ -511,7 +633,7 @@ fig21, ax21 = plt.subplots()
 ax21.violinplot(fig20_dataset, showextrema=False, showmeans=True, widths=0.7)
 # ax21.violinplot(fig20_dataset, showextrema=False, showmeans=True, widths=0.7, quantiles=[[0.1,0.9]]*24)
 ax21.set_xticks(ticks = np.arange(0, len(fig20_dataset))+1, labels=custom_order)
-ax21.set_title('Ratio Of Daily Hours Worked By Hour Of Day')
+ax21.set_title('Ratio Of Daily Hours Worked By Hour Of Day\n(Infilled Missing Values via Linear Interpolation)')
 ax21.set_ylabel('Ratio of Day\'s Hour Worked By Hour')
 ax21.set_xlabel('Hour of Day')
 
