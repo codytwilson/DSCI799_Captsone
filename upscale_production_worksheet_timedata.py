@@ -30,7 +30,7 @@ time_data = time_data.groupby(level=0).sum()
 time_data = time_data.transpose()
 # set the index to be datetime incase it does weird shit for some reason
 time_data.index = pd.to_datetime(time_data.index)
-# going to limit our study to 2020 + 
+# going to limit our study to 2021 + 
 time_data = time_data[time_data.index > datetime.datetime(2020,1,1)]
 ''' TESTING PURPOSES '''
 # time_data = time_data[time_data.index > datetime.datetime(2023,8,1)]
