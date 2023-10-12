@@ -37,13 +37,29 @@ highres = highres[((highres['StartOfWeek'] >= start_date_csm) & (highres['Shop']
 
 
 
-
+#%% checking missing records on 15 minute interval
 highres3 = highres.copy()
 expected_timestamps = pd.date_range(datetime.datetime(2023,5,21,0,0,0), highres3['Timestamp'].max(), freq='15T')
 highres3 = highres3.set_index('Timestamp')
 highres3 = highres3[['Shop','Direct Hours']].groupby('Shop').resample('15T').count()
+
 highres3 = highres3.drop(columns='Shop')
 highres3 = highres3.reset_index()
+new_highres3 = pd.DataFrame(columns=highres3.columns)
+for shop in pd.unique(highres3['Shop']):
+    chunk = highres3[highres3['Shop'] == shop]
+    chunk = chunk.reset_index(drop=True)
+    chunk = chunk.set_index('Timestamp')
+    chunk = chunk.reindex(expected_timestamps)
+    chunk = chunk.reset_index(drop=False)
+    chunk = chunk.rename(columns={'index':'Timestamp'})
+    chunk['Shop'] = shop
+    chunk = chunk.fillna(0)
+    new_highres3 = pd.concat([new_highres3, chunk])
+    
+highres3 = new_highres3.copy()   
+highres3['Direct Hours'] = pd.to_numeric(highres3['Direct Hours'])
+    
 highres3['1'] = highres3['Direct Hours'] > 0
 fig11, ax111 = plt.subplots(nrows=1, ncols=1)
 for shop in colors.keys():
@@ -62,18 +78,51 @@ ax111.set_ylabel('Number of Records')
 fig11.suptitle('15 Minute Interval Records Check')
 fig11.autofmt_xdate(rotation=45)
 
-# TODO: Now calculate how many records I am missing for each of the shops after creating this graphic
+
+expected_number_records = expected_timestamps.shape[0]
+number_records_seen = highres3.groupby('Shop').sum()['Direct Hours'].to_frame()
+number_records_seen['Ratio Missed'] = (expected_number_records - number_records_seen) / expected_number_records
+
+
+
+
+#%% checking how many hours are missing when we go to hourly
+
+
+highres4 = highres.copy()
+expected_timestamps = pd.date_range(datetime.datetime(2023,5,21,0,0,0), highres4['Timestamp'].max(), freq='H')
+highres4 = highres4.set_index('Timestamp')
+highres4 = highres4[['Shop','Direct Hours']].groupby('Shop').resample('H').count()
+
+highres4 = highres4.drop(columns='Shop')
+highres4 = highres4.reset_index()
+new_highres4 = pd.DataFrame(columns=highres4.columns)
+for shop in pd.unique(highres4['Shop']):
+    chunk = highres4[highres4['Shop'] == shop]
+    chunk = chunk.reset_index(drop=True)
+    chunk = chunk.set_index('Timestamp')
+    chunk = chunk.reindex(expected_timestamps)
+    chunk = chunk.reset_index(drop=False)
+    chunk = chunk.rename(columns={'index':'Timestamp'})
+    chunk['Shop'] = shop
+    chunk = chunk.fillna(0)
+    new_highres4 = pd.concat([new_highres4, chunk])
+    
+highres4 = new_highres4.copy()   
+highres4['Direct Hours'] = pd.to_numeric(highres4['Direct Hours'])
+
+
+expected_number_records = expected_timestamps.shape[0]
+highres4['HasRecord'] = highres4['Direct Hours'] > 0
+number_records_seen = highres4.groupby('Shop').sum()['HasRecord'].to_frame()
+number_records_seen['Ratio Missed'] = (expected_number_records - number_records_seen) / expected_number_records
 
 
 
 
 
 
-
-
-
-
-
+#%%
 
 
 
@@ -274,12 +323,6 @@ hourly_highres = hourly_highres.set_index('Timestamp')
 
 
 
-
-'''
-This is exact replica of fig9, except it cuts CSM to have the same start point as CSF/FED
-
-I SHOULD ADD GRIDS ON X TO SHOW UP EVERY 7 DAYS
-'''
 fig11, (ax110, ax111) = plt.subplots(nrows=2, ncols=1)
 for shop in colors.keys():
     chunk = daily_highres[daily_highres['Shop'] == shop]
@@ -298,6 +341,20 @@ ax110.set_xticks([])
 ax110.set_ylabel('Weekly Hours')
 ax111.set_ylabel('Cumulative')
 fig11.autofmt_xdate(rotation=45)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 hourly_highres['1'] = ~ hourly_highres['Direct Hours'].isna()
