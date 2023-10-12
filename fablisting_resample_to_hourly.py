@@ -18,6 +18,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.model_selection import GridSearchCV
 from sklearn.ensemble import RandomForestRegressor
 import matplotlib.pyplot as plt
+import matplotlib.ticker as mtick
 from sklearn.metrics import mean_squared_error
 from scipy.stats import ttest_ind, ttest_1samp
 from scipy.stats import percentileofscore
@@ -110,12 +111,21 @@ fablisting_without_missing = fablisting_without_missing[fablisting_without_missi
 print(f"The mean of Earned Hours {fablisting_without_missing['Earned Hours'].mean()} is the {percentileofscore(fablisting_without_missing['Earned Hours'], fablisting_without_missing['Earned Hours'].mean())} quantile")
 
 
+#%% looking at distribution of quantity
+
+fig,ax = plt.subplots()
+quants = np.arange(0.001,0.9999,0.0001)
+ax.plot(quants, np.quantile(fablisting['Quantity'], quants))
+ax.set_title('Quantity by Quantile')
+ax.set_xlabel('Quantile')
+ax.set_ylabel('Quantity')
+ax.set_yscale('log')
+ax.set_xlim((0.75,1))
+ax.xaxis.set_major_formatter(mtick.PercentFormatter())
 
 
-
-
-
-
+quantity_outlier = np.quantile(fablisting['Quantity'], 0.99)
+fablisting[fablisting['Quantity'] > quantity_outlier] = quantity_outlier
 
 
 ''' how are we going to replace the missing model pieces ??? '''
@@ -181,7 +191,7 @@ kmeans_vars = ['Weight','Has Model','kmeansTimestamp']
 
 
 
-#%% now do it with a tree
+#%% now do it with a random forest
 
 
 
@@ -251,6 +261,7 @@ ttest_1samp(missing_earned_hours['Earned Hours rf'], fablisting_without_missing[
 
 missing_earned_hours_description = missing_earned_hours[['Quantity','Weight','Earned Hours rf']].describe()
 
+
 #%% Here we are going to find when jobs came online from the 
 
 pw = load_production_worksheet_csv_to_df()
@@ -300,7 +311,6 @@ earliest_jobs = earliest_jobs[['Shop','Earliest Appearance','Job lbs']].groupby(
 #%%
 
 
-shops = pd.unique(fablisting_highres['shop'])
 
 def accumulate_features(df, resampling=False):
     chunk = df.copy()
@@ -342,6 +352,8 @@ fablisting2['Earned Hours'] = fablisting2['Earned Hours'].fillna(0)
 
 fablisting_highres = fablisting2.groupby('shop').resample('H').sum()
 fablisting_highres = fablisting_highres.reset_index(drop=False)
+shops = pd.unique(fablisting_highres['shop'])
+
 for shop in shops:
     df = fablisting_highres[fablisting_highres['shop'] == shop]
     df = accumulate_features(df)
