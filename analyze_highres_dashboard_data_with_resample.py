@@ -158,7 +158,7 @@ highres.loc[nightshift_backaDay.index, 'weekday'] = nightshift_backaDay
 
 highres2 = highres.set_index('Timestamp')
 
-hourly_highres = highres2[['Shop','StartOfWeek','Direct Hours','Earned Hours']].groupby('Shop').resample('H').max()
+hourly_highres = highres2[['Shop','StartOfWeek','Direct Hours','Earned Hours']].groupby('Shop').resample('H', label='right').max()
 hourly_highres = hourly_highres.drop(columns=['Shop'])
 hourly_highres = hourly_highres.reset_index(drop=False)
 
