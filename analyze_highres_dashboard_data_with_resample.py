@@ -475,7 +475,30 @@ daily_highres_shop_stats = daily_highres.groupby(['Shop','weekday']).agg(agg_sta
 daily_highres_stats = daily_highres.groupby('weekday').agg(agg_stats)
 
 
-
+fig,axes = plt.subplots(ncols=2, nrows=len(weekdays), sharey=True, figsize=(5.5,6))
+for k in weekdays.keys():
+    
+    ax = axes[k,0]
+    ax1 = axes[k,1]
+    
+    chunk = daily_highres[daily_highres['weekday'] == k]
+    ax.hist(chunk['DirectHoursRatio'], bins=np.arange(0,1,0.05))
+    ax1.hist(chunk['DirectHoursInterpolatedRatio'], bins=np.arange(0,1,0.05))
+    ax.set_ylabel(weekdays[k][:3])
+    if k == list(weekdays.keys())[-1]:
+        ax.set_xlim((0,0.5))
+        ax1.set_xlim((0,0.5))
+        ax.set_xlabel('Ratio of Weekly Hours')
+        ax1.set_xlabel('Ratio of Weekly Hours')
+    else:
+        ax.set_xticks([])
+        ax1.set_xticks([])
+        
+    if k == 0:
+        ax.set_title('(No Infill)')
+        ax1.set_title('(Linear Interpolation)')
+    # ax.set_ylim((0,25))
+fig.suptitle('Daily Histograms of Ratio of Weekly Hours Worked')
 
 
 
@@ -517,6 +540,7 @@ ax16.boxplot(fig16_dataset)
 ax16.set_xticks(ticks = [i+1 for i in weekdays.keys()], labels=[i[:3] for i in weekdays.values()])
 ax16.set_title('Ratio Of Weekly Hours Worked By Day')
 ax16.set_ylabel('Ratio of Day Hours / Week Hours')
+ax16.set_ylim((0,0.5))
 
 
 fig17, ax17 = plt.subplots()
@@ -534,13 +558,14 @@ fig16_dataset = []
 for day in np.arange(0,7):
     chunk = daily_highres[daily_highres['weekday'] == day]
     chunk = chunk[chunk['DirectHoursInterpolatedRatio'] > 0]
-    chunk = chunk[chunk['DirectHoursInterpolatedRatio'] < 0.5]
+    # chunk = chunk[chunk['DirectHoursInterpolatedRatio'] < 0.5]
     fig16_dataset.append(chunk['DirectHoursInterpolatedRatio'])
 
 ax16.boxplot(fig16_dataset)
 ax16.set_xticks(ticks = [i+1 for i in weekdays.keys()], labels=[i[:3] for i in weekdays.values()])
 ax16.set_title('Ratio Of Weekly Hours Worked By Day\n(Infilled Missing Values via Linear Interpolation)')
 ax16.set_ylabel('Ratio of Day Hours / Week Hours')
+ax16.set_ylim((0,0.5))
 
 
 fig17, ax17 = plt.subplots()
@@ -563,16 +588,16 @@ hourly_highres['Direct Hours Interpolated Hour'] = hourly_highres['Direct Hours 
 hourly_highres['Earned Hours Interpolated Hour'] = hourly_highres['Earned Hours Interpolated Hour'].fillna(hourly_highres['Earned Hours Interpolated'])
 
 
-hourly_highres['Direct Hours Interpolated Hour PCTCHANGE'] = hourly_highres.groupby(['Shop','StartOfWeek']).pct_change()['Direct Hours Interpolated Hour'].replace([np.inf, -np.inf], np.nan)
-# hourly_highres['Direct Hours Hour'] = hourly_highres['Direct Hours Hour'].fillna(hourly_highres['Direct Hours'])
-# hourly_highres['Earned Hours Hour'] = hourly_highres['Earned Hours Hour'].fillna(hourly_highres['Earned Hours'])
-# hourly_highres['Direct Hours Interpolated Hour'] = hourly_highres['Direct Hours Interpolated Hour'].fillna(hourly_highres['Direct Hours Interpolated'])
-# hourly_highres['Earned Hours Interpolated Hour'] = hourly_highres['Earned Hours Interpolated Hour'].fillna(hourly_highres['Earned Hours Interpolated'])
+# hourly_highres['Direct Hours Interpolated Hour PCTCHANGE'] = hourly_highres[['Shop','StartOfWeek','Direct Hours Interpolated Hour']].groupby(['Shop','StartOfWeek']).pct_change()['Direct Hours Interpolated Hour'].replace([np.inf, -np.inf], np.nan)
+# # hourly_highres['Direct Hours Hour'] = hourly_highres['Direct Hours Hour'].fillna(hourly_highres['Direct Hours'])
+# # hourly_highres['Earned Hours Hour'] = hourly_highres['Earned Hours Hour'].fillna(hourly_highres['Earned Hours'])
+# # hourly_highres['Direct Hours Interpolated Hour'] = hourly_highres['Direct Hours Interpolated Hour'].fillna(hourly_highres['Direct Hours Interpolated'])
+# # hourly_highres['Earned Hours Interpolated Hour'] = hourly_highres['Earned Hours Interpolated Hour'].fillna(hourly_highres['Earned Hours Interpolated'])
 
-fig999, ax999 = plt.subplots()
-ax999.hist(hourly_highres['Direct Hours Interpolated Hour PCTCHANGE'].abs(), bins=[0.01,0.1,1,10])
-ax999.set_xscale('log')
-ax999.set_title('Distribution of PCT Change in Hour over Hour Direct Hours')
+# fig999, ax999 = plt.subplots()
+# ax999.hist(hourly_highres['Direct Hours Interpolated Hour PCTCHANGE'].abs(), bins=[0.01,0.1,1,10])
+# ax999.set_xscale('log')
+# ax999.set_title('Distribution of PCT Change in Hour over Hour Direct Hours')
 
 
 
@@ -594,11 +619,53 @@ hourly_highres = hourly_highres.set_index('Timestamp')
 
 
 
+
+
+
+
+
+
+
+
+fig, (ax0, ax1) = plt.subplots(ncols=2, nrows=1, sharey=True, sharex=True)
+ax0.hist(hourly_highres['DirectHoursRatio'], bins=np.arange(-1,1,0.05))
+ax0.set_title('(Standard)')
+ax0.set_yscale('log')
+
+ax1.hist(hourly_highres['DirectHoursInterpolatedRatio'], bins=np.arange(-1,1,0.05))
+ax1.set_title('(Interpolated)')
+ax1.set_yscale('log')
+fig.suptitle('Distribution of Daily Hours Worked by Hour')
+
+
+
+quants = np.arange(0,0.999, 0.001)
+fig, (ax0, ax1) = plt.subplots(ncols=2, nrows=1, sharey=True, sharex=True)
+ax0.plot(quants, np.quantile(hourly_highres[~hourly_highres['DirectHoursRatio'].isna()]['DirectHoursRatio'], quants))
+ax0.set_yscale('log')
+ax0.set_title('(Standard)')
+ax0.set_ylim((1e-4,1))
+ax0.set_ylabel('Ratio of Daily Hours')
+ax1.plot(quants, np.quantile(hourly_highres[~hourly_highres['DirectHoursInterpolatedRatio'].isna()]['DirectHoursInterpolatedRatio'], quants))
+ax1.set_yscale('log')
+ax1.set_title('(Interpolated)')
+fig.suptitle('Quantiles of Daily Hours Worked by Hour')
+
+
+crosses_zero = np.where(np.quantile(hourly_highres[~hourly_highres['DirectHoursRatio'].isna()]['DirectHoursRatio'], quants) >= 1e-4)[0][0]
+crosses_zero_DirectHoursRatio_quantile = quants[crosses_zero]
+crosses_zero = np.where(np.quantile(hourly_highres[~hourly_highres['DirectHoursInterpolatedRatio'].isna()]['DirectHoursInterpolatedRatio'], quants) >= 1e-4)[0][0]
+crosses_zero_DirectHoursInterpolatedRatio_quantile = quants[crosses_zero]
+
+
+
 directHoursRatio_quantiles = np.quantile(hourly_highres[~hourly_highres['DirectHoursRatio'].isna()]['DirectHoursRatio'], [0.05,0.1,0.25,0.5,0.75,0.9])
 
 # plt.hist(hourly_highres[~hourly_highres['DirectHoursInterpolatedRatio'].isna()]['DirectHoursInterpolatedRatio'], bins=[-1000,-10,0,10,1000])
 directHoursInterpolateRatio_quantiles = np.quantile(hourly_highres[~hourly_highres['DirectHoursInterpolatedRatio'].isna()]['DirectHoursInterpolatedRatio'], [0.01,0.1,0.25,0.5,0.75,0.9,0.99])
-directHoursInterpolateRatio_quantiles_filter = np.quantile(hourly_highres[~hourly_highres['DirectHoursInterpolatedRatio'].isna()]['DirectHoursInterpolatedRatio'], [0.06,0.8])
+directHoursInterpolateRatio_quantiles_filter = np.quantile(hourly_highres[~hourly_highres['DirectHoursInterpolatedRatio'].isna()]['DirectHoursInterpolatedRatio'], [crosses_zero_DirectHoursInterpolatedRatio_quantile,0.8])
+
+
 
 
 

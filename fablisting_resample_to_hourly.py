@@ -125,7 +125,10 @@ ax.xaxis.set_major_formatter(mtick.PercentFormatter())
 
 
 quantity_outlier = np.quantile(fablisting['Quantity'], 0.99)
-fablisting[fablisting['Quantity'] > quantity_outlier] = quantity_outlier
+is_outlier = fablisting['Quantity'] > quantity_outlier
+quantity = fablisting['Quantity'].copy()
+quantity[is_outlier] = quantity_outlier
+fablisting['Quantity'] = quantity
 
 
 ''' how are we going to replace the missing model pieces ??? '''
@@ -205,7 +208,7 @@ fablisting_without_missing['Job #'] = jobEncoder.transform(fablisting_without_mi
 
 
 
-rf = RandomForestRegressor(random_state=0, max_features='sqrt', n_estimators=150)
+rf = RandomForestRegressor(random_state=0, max_features=3, n_estimators=150)
 # rf.fit(fablisting_without_missing[rf_vars], fablisting_without_missing['Earned Hours'])
 X_train, X_test, y_train, y_test = train_test_split(fablisting_without_missing[rf_vars], fablisting_without_missing['Earned Hours'], train_size=0.8)
 rf.fit(X_train, y_train)
@@ -408,13 +411,13 @@ for k, shop in enumerate(shops):
     chunk = fablisting_highres_daily[fablisting_highres_daily['shop'] == shop].copy()
     chunk = chunk[chunk[plot_col] > 0]
     ax.plot(chunk['Timestamp'], chunk['Earned Hours'], color=colors[shop])
-    months = pd.date_range(f'2021-01-01',fablisting_highres_daily['Timestamp'].max(), freq='3MS')
+    months = pd.date_range('2021-01-01',fablisting_highres_daily['Timestamp'].max(), freq='3MS')
     ax.set_xticks(months)
     ax.set_xticklabels([dt.strftime('%Y-%m') for dt in months])
     ax.set_ylim(0, 1200)  # Replace 'your_max_y_limit' with your desired y-limit
     ax.grid(axis='y', linestyle='--', alpha=0.5)
     ax.set_ylabel(shop +'\nDaily Earned Hours')
-fig.suptitle('Daily Earned Hours')
+axes[0].set_title('Daily Earned Hours')
 plt.xticks(rotation=45)
 
 # TODO: Plots showing the daily resolutoin of weekly hours 
@@ -425,13 +428,14 @@ for k, shop in enumerate(shops):
     chunk = fablisting_highres_weekly[fablisting_highres_weekly['shop'] == shop].copy()
     chunk = chunk[chunk[plot_col] > 0]
     ax.plot(chunk['Timestamp'], chunk['Earned Hours'], color=colors[shop])
-    months = pd.date_range(f'2021-01-01',fablisting_highres_weekly['Timestamp'].max(), freq='3MS')
+    months = pd.date_range('2021-01-01',fablisting_highres_weekly['Timestamp'].max(), freq='3MS')
     ax.set_xticks(months)
     ax.set_xticklabels([dt.strftime('%Y-%m') for dt in months])
     ax.set_ylim(0, 3000)  # Replace 'your_max_y_limit' with your desired y-limit
     ax.grid(axis='y', linestyle='--', alpha=0.5)
     ax.set_ylabel(shop +'\nWeekly Earned Hours')
-fig.suptitle('Weekly Earned Hours')
+
+axes[0].set_title('Weekly Earned Hours')
 plt.xticks(rotation=45)
 
 
@@ -478,4 +482,5 @@ plt.show()
 
 #%%
 
-
+def output_production_data():
+    fablisting_highres.to_csv('.\\data\\output_production_data.csv', index=False)
