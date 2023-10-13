@@ -185,4 +185,6 @@ ax.yaxis.set_major_formatter(mtick.PercentFormatter())
 
 
 
-
+#%% Output the hourly data source
+def output_time_data():
+    resampled_time_data2.to_csv('.\\data\\output_timekeeping.csv', index=True)
