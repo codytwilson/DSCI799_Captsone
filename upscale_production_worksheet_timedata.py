@@ -108,6 +108,11 @@ def randomize_according_to_distribution(series):
 
 # we need a bigger index b/c we are using date as start of the week
 hourly_index = pd.date_range(start=time_data.index.min(), end=time_data.index.max() + pd.Timedelta(days=7), freq='H')
+
+time_data['CSM'] = time_data['CSM'].apply(lambda x: int(str(int(x))[:4]) if len(str(int(x))) > 4 else int(x))
+time_data['CSF'] = time_data['CSF'].apply(lambda x: int(str(int(x))[:4]) if len(str(int(x))) > 4 else int(x))
+time_data['FED'] = time_data['FED'].apply(lambda x: int(str(int(x))[:4]) if len(str(int(x))) > 4 else int(x))
+
 # the resample only goes until the last timestamp in time_data
 # the first ffill fills in everything from that resample
 # then we set the index to be hourly_index, which properly gives us the last week
