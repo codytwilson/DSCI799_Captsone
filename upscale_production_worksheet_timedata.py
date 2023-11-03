@@ -42,7 +42,7 @@ time_data = time_data[time_data.index > datetime.datetime(2020,1,1)]
 
 # TODO: outliers
 time_data = time_data[time_data.index > datetime.datetime(2021,1,1)]
-time_data = time_data[time_data.index < datetime.datetime(2023,10,1)]
+time_data = time_data[time_data.index < datetime.datetime(2023,11,1)]
 time_data_independent = time_data.melt()['value']
 time_data_boxplots = []
 for shop in time_data.columns:

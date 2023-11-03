@@ -29,7 +29,7 @@ def load_and_combine_fablisting_csv_to_df():
     
     for shop in ['CSM', 'CSF', 'FED']:
         for year in [2020,2021,2022,2023]:
-            filepath = '.\\Data\\' + shop + "_fablisting_" + str(year) + '.csv'
+            filepath = '.\\Data\\' + shop + ' ' + str(year) + '.csv'
             temp_df = pd.read_csv(filepath, index_col=0)
             temp_df['shop'] = shop
             temp_df['Timestamp'] = pd.to_datetime(temp_df['Timestamp'], errors='coerce', format='%Y-%m-%d %H:%M:%S')
@@ -48,14 +48,22 @@ def load_production_worksheet_csv_to_df():
     
     df = df.loc[:cutoff_idx - 1,:]
     
+    # this is dumb but Im being lazy
+    # this is b/c people deleted the column names... as per usual
+    should_be_headers = ['Job #', 'Hrs./Ton']
+    df.iloc[3,0:2] = should_be_headers
+    
     return df
    
  
 def get_production_worksheet_boundaries(df):
     # get the first column
     col0 = df.iloc[:,0]
-    # find the index where we have 'Job #'
-    header_index = col0.index[col0 == "Job #"][0]
+    try:
+        # find the index where we have 'Job #'
+        header_index = col0.index[col0 == "Job #"][0]
+    except:
+        header_index = 3
     # the headers row 
     headers = df.loc[header_index, :]
     # reset the index to ints count
