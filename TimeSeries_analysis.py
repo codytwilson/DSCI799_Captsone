@@ -14,7 +14,8 @@ from statsmodels.tsa.stattools import adfuller, kpss
 colors = {'CSM':'tab:blue','CSF':'tab:orange','FED':'tab:green'}
 regressors = ['Quantity','Weight','Worth','Manhours','OustandingWeight']
 
-
+df = pd.read_csv('.\\data\\data_for_ml.csv')
+df['Timestamp'] = pd.to_datetime(df['Timestamp'])
 
 records_count = df.groupby('Shop').count()
 
