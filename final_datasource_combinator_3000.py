@@ -41,4 +41,7 @@ def create_ml_data():
     df = df[(df['Timestamp'] >= earliest['Timestamp'].max()) & (df['Timestamp'] <= latest['Timestamp'].min())]
     df = df[df['Timestamp'] >= pd.Timestamp('2021-01-10')]
     
+    df['Weekday'] = df['Timestamp'].dt.weekday
+    df['DayShift'] = df['Timestamp'].apply(lambda x: 1 if (x.hour >= 6 and x.hour <= 17) else 0)
+    
     df.to_csv('.\\data\\data_for_ml.csv')
