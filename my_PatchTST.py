@@ -28,7 +28,7 @@ from requisite.utils.metrics import metric
 
 
 
-features = 'S'
+features = 'M'
 batch_size = 10
 data_dict,  enc_count = init_dataset_dict(features, batch_size)
 
@@ -79,6 +79,10 @@ print(model)
 
 
 
+#%%
+
+
+
 
 losses_train, losses_val, losses_test = [], [], []
 train_epochs = 2
@@ -107,19 +111,19 @@ for epoch in range(train_epochs):
                            num_epochs=train_epochs, 
                            current_epoch=epoch, 
                            trainer_count=trainer_count)
-        print(f'/\/\/\/\/\ Train Loss:   {train_loss}')
+        print(f'/\/\/\/\/\/\/\/\ Train Loss:  {train_loss}')
         
         val_loss = vali(configs = configs, 
                            dataloader = data_dict[shop]['val']['dataloader'], 
                            model = model, 
                            criterion = criterion)
-        print(f'/\/\/\/\/\ Val Loss:   {val_loss}')
+        print(f'/\/\/\/\/\/\/\/\ Val Loss:    {val_loss}')
         
         test_loss = vali(configs = configs, 
                            dataloader = data_dict[shop]['test']['dataloader'], 
                            model = model, 
                            criterion = criterion)
-        print(f'/\/\/\/\/\ Test Loss:  {test_loss}')
+        print(f'/\/\/\/\/\/\/\/\ Test Loss:   {test_loss}')
         
         
         losses_train_shop.append(train_loss)
@@ -173,7 +177,7 @@ plotting here
 # saved_params = model.load_state_dict(torch.load('.\\saved_models\\myiTransformer.pth'))
 
 val = data_dict['CSM']['val']
-results = predict(configs = configs, 
-                   dataloader = val['dataset'], 
+yhat, ytrue = predict(configs = configs, 
+                   dataset = val['dataset'], 
                    model = model, 
                    index = len(val['dataset']))
