@@ -8,7 +8,7 @@ from functools import partial, reduce, wraps
 from itertools import chain
 from operator import mul
 
-from requisite.local_attention import LocalAttention
+from .local_attention import LocalAttention
 from requisite.axial_positional_embedding import AxialPositionalEmbedding
 from requisite.product_key_memory import PKM
 from requisite.reversible import ReversibleSequence
