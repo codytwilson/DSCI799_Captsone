@@ -72,14 +72,10 @@ print(model)
 #%%
 
 
-
-
-#%%
-
-
-
-
-losses_train, losses_val, losses_test = [], [], []
+'''
+past_results = pd.read_csv('.\iTransformer_202311101540.csv', index_col=0)
+'''
+losses_train, losses_val, losses_test, lr_ = [], [], [], []
 train_epochs = 2
 #%%
 
@@ -91,7 +87,7 @@ for epoch in range(train_epochs):
     print(f'=========== {configs.model} ===========')
     print(f'--------\nEpoch {epoch}\n--------')
     print('Learning Rate: {}'.format(optimizer.param_groups[0]['lr']), end = '\n\n')
-    
+    lr_.append(optimizer.param_groups[0]['lr'])
     
     losses_train_shop, losses_val_shop, losses_test_shop = [], [], []
     trainer_count = 0
@@ -151,11 +147,14 @@ for epoch in range(train_epochs):
     
     
 
-    
-epoch_results = pd.DataFrame(columns=['Train','Test','Val'])
+
+epoch_results = pd.DataFrame(columns=['Train','Test','Val','lr'])
 epoch_results['Train'] = losses_train
 epoch_results['Test'] = losses_test
 epoch_results['Val'] = losses_val
+epoch_results['lr'] = lr_
+if 'past_results' in locals():
+    epoch_results = pd.concat([past_results, epoch_results])
 now = datetime.datetime.now().strftime('%Y%m%d%H%M')
 epoch_results.to_csv(configs.model + '_' + now + '.csv')
 
@@ -175,4 +174,4 @@ val = data_dict['CSM']['val']
 yhat, ytrue = predict(configs = configs, 
                    dataset = val['dataset'], 
                    model = model, 
-                   index = len(val['dataset']))
+                   index = len(val['dataset']) - 1)
