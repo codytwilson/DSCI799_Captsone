@@ -60,13 +60,20 @@ configs = {'model':'TimesNet',
             'dropout':0.1,
             'output_attention':False,
             'batch_size':batch_size,
-            'features':features}
+            'features':features,
+            'n_heads':3,
+            'activation':'relu',
+            'device':device,
+            'patience':3}
 configs = SimpleNamespace(**configs)
 model = Model(configs)
 
+args = {'learning_rate':1e-5,
+        'lradj':'type1'}
+args = SimpleNamespace(**args)
 learning_rate = 1e-5
 criterion = nn.MSELoss()
-optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
+optimizer = torch.optim.Adam(model.parameters(), lr=args.learning_rate)
 print(model)
 
 #%%
@@ -166,7 +173,7 @@ plotting here
 
 '''
     
-# torch.save(model.state_dict(), '.\\saved_models\\myiTransformer_17vars.pth')
+torch.save(model.state_dict(), '.\\saved_models\\' + configs.model + '_' + now + '.pth')
 
 # saved_params = model.load_state_dict(torch.load('.\\saved_models\\myiTransformer.pth'))
 

@@ -84,7 +84,7 @@ print(model)
 past_results = pd.read_csv('.\iTransformer_202311101540.csv', index_col=0)
 '''
 losses_train, losses_val, losses_test, lr_ = [], [], [], []
-train_epochs = 2
+train_epochs = 20
 #%%
 
 
@@ -167,14 +167,14 @@ now = datetime.datetime.now().strftime('%Y%m%d%H%M')
 epoch_results.to_csv(configs.model + '_' + now + '.csv')
 
 
-
+# early_stopping.save_checkpoint(1,model, '.\\saved_models\\')
 '''
 
 plotting here
 
 '''
     
-# torch.save(model.state_dict(), '.\\saved_models\\myiTransformer_17vars.pth')
+torch.save(model.state_dict(), '.\\saved_models\\' + configs.model + '_' + now + '.pth')
 
 # saved_params = model.load_state_dict(torch.load('.\\saved_models\\myiTransformer.pth'))
 
