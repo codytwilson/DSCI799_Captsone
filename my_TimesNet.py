@@ -26,7 +26,7 @@ from requisite.utils.tools import EarlyStopping, adjust_learning_rate, visual
 from requisite.utils.metrics import metric
 
 
-features = 'S'
+features = 'M'
 batch_size = 10
 data_dict,  enc_count = init_dataset_dict(features, batch_size)
 
@@ -51,7 +51,7 @@ configs = {'model':'TimesNet',
             'c_out':enc_count,
             'd_model':32,
             'd_ff':32,
-            'top_k':2,
+            'top_k':5,
             'des':'Exp',
             'itr':1,
             'num_kernels':6,
@@ -80,10 +80,10 @@ print(model)
 
 
 '''
-past_results = pd.read_csv('.\iTransformer_202311101540.csv', index_col=0)
+past_results = pd.read_csv('.\TimesNet_202311151945.csv', index_col=0)
 '''
 losses_train, losses_val, losses_test, lr_ = [], [], [], []
-train_epochs = 2
+train_epochs = 20
 #%%
 
 
@@ -175,7 +175,7 @@ plotting here
     
 torch.save(model.state_dict(), '.\\saved_models\\' + configs.model + '_' + now + '.pth')
 
-# saved_params = model.load_state_dict(torch.load('.\\saved_models\\myiTransformer.pth'))
+# saved_params = model.load_state_dict(torch.load('.\\saved_models\\myTimesNet_final.pth'))
 
 val = data_dict['CSM']['val']
 yhat, ytrue = predict(configs = configs, 
