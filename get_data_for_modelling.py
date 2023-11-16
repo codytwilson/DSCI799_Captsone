@@ -40,7 +40,7 @@ def init_dataset_dict(features, batch_size):
     for shop in ['CSM','CSF','FED']:
         data_dict[shop] = {}
         file = 'data_for_ml_' + shop + '.csv'
-        file_shape = pd.read_csv(".\\data\\" + file).shape
+        file_shape = pd.read_csv(".\\Data\\" + file).shape
         print(f'Shop: {shop}\n---------------')
         print(f'Size of input df: {file_shape}')
         for test_train_val in ['train','test','val']:
