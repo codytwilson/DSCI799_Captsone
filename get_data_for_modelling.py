@@ -64,3 +64,28 @@ def init_dataset_dict(features, batch_size):
         enc_count = 1
         
     return data_dict, enc_count
+
+
+
+def dataset_dict_nonml():
+    data_dict = {}
+    for shop in ['CSM','CSF','FED']:
+        data_dict[shop] = {}
+        file = 'data_for_ml_' + shop + '.csv'
+        file_shape = pd.read_csv(".\\Data\\" + file).shape
+        print(f'Shop: {shop}\n---------------')
+        print(f'Size of input df: {file_shape}')
+        for test_train_val in ['train','test','val']:
+            data_dict[shop][test_train_val] = {}
+            
+            dataset = yield_DatasetCustom(file, test_train_val, 'M')
+            
+            data = dataset.get_raw_data()
+            
+            data_dict[shop][test_train_val]['x'] = data[:,:-1]
+            data_dict[shop][test_train_val]['x'] = data[:,-1]
+            print(f'{test_train_val}: {len(dataset)}')
+            print(f'x: {data[:,:-1].shape}')
+            print(f'y: {data[:,-1].shape}')            
+            
+    return data_dict
