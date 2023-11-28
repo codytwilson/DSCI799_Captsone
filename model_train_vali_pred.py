@@ -110,7 +110,6 @@ def train(configs, dataloader, model, criterion, optimizer, num_epochs, current_
         iter_count += 1
         optimizer.zero_grad()
         batch_x = batch_x.float().to(configs.device)
-
         batch_y = batch_y.float().to(configs.device)
         batch_x_mark = batch_x_mark.float().to(configs.device)
         batch_y_mark = batch_y_mark.float().to(configs.device)
