@@ -177,7 +177,7 @@ def train(configs, dataloader, model, criterion, optimizer, num_epochs, current_
     return train_loss
     
 
-def predict(configs, dataset, model, index):
+def predict(configs, dataset, model, index, return_y_only=True):
     def this_reshape(a):
         return a.reshape(1, a.shape[0], a.shape[1])
     batch_x = dataset[index][0]
@@ -212,5 +212,7 @@ def predict(configs, dataset, model, index):
     batch_y = dataset.inverse_transform(batch_y[0,:,:])
     true_y = batch_y[:, target:]
     
-    
-    return pred_y, true_y
+    if return_y_only:
+        return pred_y, true_y
+    else:
+        return pred_y, batch_y

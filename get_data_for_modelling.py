@@ -87,5 +87,6 @@ def dataset_dict_nonml():
             # print(f'y: {data[:,-1].shape}')     
             
         data_dict[shop]['scaler'] = dataset.scaler
+        data_dict[shop]['borders'] = dataset.get_borders()
             
     return data_dict
