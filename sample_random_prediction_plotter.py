@@ -239,6 +239,7 @@ for shop in df_dict.keys():
     plt.legend()
     plt.xticks(rotation=45)
     plt.ylabel('Worth')
+    plt.ylim(bottom=0)
     plt.show()
 
 
