@@ -60,7 +60,7 @@ for p in np.arange(0,1):
     arima_order[0] = p
     for d in np.arange(0,1):
         arima_order[1] = d
-        for q in np.arange(24*7*4,24*7*4+1):
+        for q in np.arange(0,1):
             arima_order[2] = q
             orders.append(arima_order)
             
