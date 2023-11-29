@@ -24,6 +24,7 @@ from scipy.stats import ttest_ind, ttest_1samp
 from scipy.stats import percentileofscore
 
 colors = {'CSM':'tab:blue','CSF':'tab:orange','FED':'tab:green'}
+shop_converter = {'CSF':'Shop A','CSM':'Shop B','FED':'Shop C'}
 
 fablisting = load_and_combine_fablisting_csv_to_df()
 fablisting = fablisting[['Timestamp','Job #','Lot #','Lot Name','Quantity','Piece Mark - REV','Weight','Earned Hours','Has Model','shop']]
@@ -387,7 +388,7 @@ for shop in shops:
 plt.xticks(rotation=45)
 ax.set_title('Outstanding Work')
 ax.set_ylabel('Tons')
-ax.legend(shops)
+ax.legend([shop_converter[i] for i in shops])
 
 
 
