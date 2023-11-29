@@ -12,19 +12,33 @@ from torch import nn
 
 
 
-def return_pooled_for_loss(tensor):
+def return_pooled_for_loss(tensor, batch_reshape=True):
+    if batch_reshape:
+        tensor_for_pool = tensor.reshape(tensor.shape[0], 1, -1)
+    else:
+        tensor_for_pool = tensor.reshape(1,-1)
 
-    tensor_for_pool = tensor.reshape(tensor.shape[0], 1, -1)
     goal_biweekly = nn.MaxPool1d(kernel_size = 24 * 7 * 2) # 40%
     goal_weekly = nn.MaxPool1d(kernel_size= 24 * 7) # 30%
     goal_daily = nn.MaxPool1d(kernel_size = 24) # 20%
     goal_4hour = nn.MaxPool1d(kernel_size = 4) # 10%
     
-    tensor_biweekly = goal_biweekly(tensor_for_pool).reshape(tensor.shape[0], -1, 1)
-    tensor_weekly = goal_weekly(tensor_for_pool).reshape(tensor.shape[0], -1, 1)
-    tensor_daily = goal_daily(tensor_for_pool).reshape(tensor.shape[0], -1, 1)
-    tensor_4hour = goal_4hour(tensor_for_pool).reshape(tensor.shape[0], -1, 1)
+    tensor_biweekly = goal_biweekly(tensor_for_pool)
+    tensor_weekly = goal_weekly(tensor_for_pool)
+    tensor_daily = goal_daily(tensor_for_pool)
+    tensor_4hour = goal_4hour(tensor_for_pool)
     
+    if batch_reshape:
+        tensor_biweekly = tensor_biweekly.reshape(tensor.shape[0], -1, 1)
+        tensor_weekly = tensor_weekly.reshape(tensor.shape[0], -1, 1)
+        tensor_daily = tensor_daily.reshape(tensor.shape[0], -1, 1)
+        tensor_4hour = tensor_4hour.reshape(tensor.shape[0], -1, 1)
+    else:
+        tensor_biweekly = tensor_biweekly.reshape(-1, 1)
+        tensor_weekly = tensor_weekly.reshape(-1, 1)
+        tensor_daily = tensor_daily.reshape(-1, 1)
+        tensor_4hour = tensor_4hour.reshape(-1, 1)
+        
     return tensor_biweekly, tensor_weekly, tensor_daily, tensor_4hour
         
 
@@ -163,7 +177,7 @@ def train(configs, dataloader, model, criterion, optimizer, num_epochs, current_
     return train_loss
     
 
-def predict(configs, dataset, model, index):
+def predict(configs, dataset, model, index, return_y_only=True):
     def this_reshape(a):
         return a.reshape(1, a.shape[0], a.shape[1])
     batch_x = dataset[index][0]
@@ -198,5 +212,7 @@ def predict(configs, dataset, model, index):
     batch_y = dataset.inverse_transform(batch_y[0,:,:])
     true_y = batch_y[:, target:]
     
-    
-    return pred_y, true_y
+    if return_y_only:
+        return pred_y, true_y
+    else:
+        return pred_y, batch_y

@@ -80,12 +80,13 @@ def dataset_dict_nonml():
             
             dataset = yield_DatasetCustom(file, test_train_val, 'M')
             
-            data = dataset.get_raw_data()
             
-            data_dict[shop][test_train_val]['x'] = data[:,:-1]
-            data_dict[shop][test_train_val]['x'] = data[:,-1]
+            data_dict[shop][test_train_val] = dataset.get_scaled_data()
             print(f'{test_train_val}: {len(dataset)}')
-            print(f'x: {data[:,:-1].shape}')
-            print(f'y: {data[:,-1].shape}')            
+            # print(f'x: {data[:,:-1].shape}')
+            # print(f'y: {data[:,-1].shape}')     
+            
+        data_dict[shop]['scaler'] = dataset.scaler
+        data_dict[shop]['borders'] = dataset.get_borders()
             
     return data_dict

@@ -63,6 +63,9 @@ class Dataset_Custom(Dataset):
         border2s = [num_train, num_train + num_vali, len(df_raw)]
         border1 = border1s[self.set_type]
         border2 = border2s[self.set_type]
+        
+        self.border1_out = border1s
+        self.border2_out = border2s
 
         if self.features == 'M' or self.features == 'MS':
             cols_data = df_raw.columns[1:]
@@ -112,5 +115,8 @@ class Dataset_Custom(Dataset):
     def inverse_transform(self, data):
         return self.scaler.inverse_transform(data)
     
-    def get_raw_data(self):
-        return self.inverse_transform(self.data_x)
+    def get_scaled_data(self):
+        return self.data_x
+    
+    def get_borders(self):
+        return (self.border1_out, self.border2_out)
