@@ -233,9 +233,20 @@ for shop in df_dict.keys():
     df_yhat = df_yhat.drop(columns=['Worth'])
     
     
-    plt.title(shop_converter[shop])
-    plt.plot(df['Worth'], color='black')
-    plt.plot(df_yhat, label=df_yhat.columns)
+    
+    plt.title('Deep Learning Models: ' + shop_converter[shop])
+    plt.plot(df['Worth'], color='black', linewidth=2)
+    plt.plot(df_yhat[deep_learners], label=deep_learners)
+    plt.legend()
+    plt.xticks(rotation=45)
+    plt.ylabel('Worth')
+    plt.ylim(bottom=0)
+    plt.show()
+    
+    
+    plt.title('MA Models: ' + shop_converter[shop])
+    plt.plot(df['Worth'], color='black', linewidth=2)
+    plt.plot(df_yhat[arimas + ['MA']], label=arimas + ['MA'])
     plt.legend()
     plt.xticks(rotation=45)
     plt.ylabel('Worth')
@@ -245,7 +256,12 @@ for shop in df_dict.keys():
 
 
 
-
+# fig, axes = plt.subplots(ncols=1, nrows=4, sharex=True)
+# for k,ax in enumerate(axes):
+#     model_name = df_yhat.columns[k]
+#     ax.plot(df['Worth'], color='black')
+#     ax.plot(df_yhat[model_name])
+#     ax.set_ylim(bottom=0)
 
 
 
