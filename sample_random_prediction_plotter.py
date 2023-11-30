@@ -46,16 +46,16 @@ results_MA = 'ma_202311291319.csv'
 
 model_meta = {}
 model_meta['iTransformer'] = {'file':file_iTransformer,'results':results_iTransformer,
-                              'model':Model_iTransformer}
+                              'model':Model_iTransformer, 'color':'tab:blue'}
 model_meta['PatchTST'] = {'file':file_PatchTST,'results':results_PatchTST,
-                              'model':Model_PatchTST}
+                              'model':Model_PatchTST, 'color':'tab:orange'}
 model_meta['TimesNet'] = {'file':file_TimesNet,'results':results_TimesNet,
-                              'model':Model_Timesnet}
+                              'model':Model_Timesnet, 'color':'tab:green'}
 model_meta['LSTM'] = {'file':file_LSTM,'results':results_LSTM,
-                              'model':Model_LSTM}
-model_meta['ARIMA'] = {'file':file_ARIMA,'results':results_ARIMA}
-model_meta['ARIMAX'] = {'file':file_ARIMAX,'results':results_ARIMAX}
-model_meta['MA'] = {'windowsize':file_MA_windowsize,'results':results_MA}
+                              'model':Model_LSTM, 'color':'tab:purple'}
+model_meta['ARIMA'] = {'file':file_ARIMA,'results':results_ARIMA, 'color':'tab:brown'}
+model_meta['ARIMAX'] = {'file':file_ARIMAX,'results':results_ARIMAX, 'color':'tab:pink'}
+model_meta['MA'] = {'windowsize':file_MA_windowsize,'results':results_MA, 'color':'tab:gray'}
 
 deep_learners = ['iTransformer','PatchTST','TimesNet','LSTM']
 arimas = ['ARIMA','ARIMAX']
@@ -219,7 +219,7 @@ for k in df_dict.keys():
 
 #%%
 
-resample_hours = 12
+resample_hours = 6
 resample_str = str(resample_hours) + 'H'
 
 
@@ -234,25 +234,37 @@ for shop in df_dict.keys():
     
     
     
-    plt.title('Deep Learning Models: ' + shop_converter[shop])
-    plt.plot(df['Worth'], color='black', linewidth=2)
-    plt.plot(df_yhat[deep_learners], label=deep_learners)
-    plt.legend()
-    plt.xticks(rotation=45)
-    plt.ylabel('Worth')
-    plt.ylim(bottom=0)
-    plt.show()
+    # plt.title('Deep Learning Models: ' + shop_converter[shop])
+    # plt.plot(df['Worth'], color='black', linewidth=2)
+    # plt.plot(df_yhat[deep_learners], label=deep_learners)
+    # plt.legend()
+    # plt.xticks(rotation=45)
+    # plt.ylabel('Worth')
+    # plt.ylim(bottom=0)
+    # plt.show()
     
     
-    plt.title('MA Models: ' + shop_converter[shop])
-    plt.plot(df['Worth'], color='black', linewidth=2)
-    plt.plot(df_yhat[arimas + ['MA']], label=arimas + ['MA'])
-    plt.legend()
-    plt.xticks(rotation=45)
-    plt.ylabel('Worth')
-    plt.ylim(bottom=0)
-    plt.show()
+    # plt.title('MA Models: ' + shop_converter[shop])
+    # plt.plot(df['Worth'], color='black', linewidth=2)
+    # plt.plot(df_yhat[arimas + ['MA']], label=arimas + ['MA'])
+    # plt.legend()
+    # plt.xticks(rotation=45)
+    # plt.ylabel('Worth')
+    # plt.ylim(bottom=0)
+    # plt.show()
 
+
+    for col in df.columns:
+        if col == 'Worth':
+            continue
+        plt.title(col + ' Model: ' + shop_converter[shop])
+        plt.plot(df['Worth'], color='black', linewidth=2)
+        plt.plot(df_yhat[col], label=col, color=model_meta[col]['color'])
+        plt.legend()
+        plt.xticks(rotation=45)
+        plt.ylabel('Worth')
+        plt.ylim(bottom=0)
+        plt.show()
 
 
 
