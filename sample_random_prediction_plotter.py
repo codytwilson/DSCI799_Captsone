@@ -225,8 +225,9 @@ resample_str = str(resample_hours) + 'H'
 
 shop = 'CSM'
 for shop in df_dict.keys():
-    df = df_dict[shop]
-    
+    df = df_dict[shop].copy()
+    for col in df.columns:
+        df[col] = pd.to_numeric(df[col], errors='coerce')
     df = df.resample(resample_str).sum()
     
     df_yhat = df.iloc[672//resample_hours:,]
@@ -253,18 +254,24 @@ for shop in df_dict.keys():
     # plt.ylim(bottom=0)
     # plt.show()
 
-
-    for col in df.columns:
+    fig, axes = plt.subplots(nrows=4, ncols=8, figsize=(8,10))
+    i = 0
+    for i, ax in enumerate(axes):
+    # for col in df.columns:
+        col = df.columns[i]
         if col == 'Worth':
             continue
-        plt.title(col + ' Model: ' + shop_converter[shop])
-        plt.plot(df['Worth'], color='black', linewidth=2)
-        plt.plot(df_yhat[col], label=col, color=model_meta[col]['color'])
-        plt.legend()
-        plt.xticks(rotation=45)
-        plt.ylabel('Worth')
-        plt.ylim(bottom=0)
-        plt.show()
+        # ax = axes[i]
+        ax.set_title(col + ' Model: ' + shop_converter[shop])
+        ax.plot(df['Worth'], color='black', linewidth=2)
+        ax.plot(df_yhat[col], label=col, color=model_meta[col]['color'])
+        ax.legend()
+        ax.set_xticks(rotation=45)
+        ax.set_ylabel('Worth')
+        ax.set_ylim(bottom=0)
+        
+        i += 1
+    plt.show()
 
 
 
