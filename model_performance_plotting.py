@@ -104,3 +104,11 @@ plt.xlabel('Window Size - Hours')
 plt.ylabel('MSE')
 plt.title('Moving Average Validation MSE')
 plt.show()
+
+
+#%%
+
+'''
+Plot bar chart drawn in notebook for section 'FINAL Selection'
+
+'''
