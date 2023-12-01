@@ -22,7 +22,7 @@ from statsmodels.iolib.smpickle import load_pickle
 shop_converter = {'CSF':'Shop A','CSM':'Shop B','FED':'Shop C'}
 
 batch_size = 10
-sample_test_index = 3900
+sample_test_index = 2800
 data_dict_ml,  enc_count = init_dataset_dict('M', batch_size)
 data_dict_nonml = dataset_dict_nonml()
 
@@ -220,7 +220,7 @@ for k in df_dict.keys():
 #%%
 
 resample_hours = 6
-resample_str = str(resample_hours) + 'H'
+resample_str = f'{str(resample_hours)}H'
 
 
 shop = 'CSM'
@@ -254,23 +254,23 @@ for shop in df_dict.keys():
     # plt.ylim(bottom=0)
     # plt.show()
 
-    fig, axes = plt.subplots(nrows=4, ncols=8, figsize=(8,10))
+    fig, axes = plt.subplots(nrows=7, ncols=1, figsize=(8,10), sharex=True)
     i = 0
-    for i, ax in enumerate(axes):
-    # for col in df.columns:
+    for prow in range(len(axes)):
+        ax = axes[prow]
         col = df.columns[i]
         if col == 'Worth':
             continue
-        # ax = axes[i]
-        ax.set_title(col + ' Model: ' + shop_converter[shop])
+        # ax.set_title(col + ' Model: ' + shop_converter[shop])
         ax.plot(df['Worth'], color='black', linewidth=2)
         ax.plot(df_yhat[col], label=col, color=model_meta[col]['color'])
-        ax.legend()
-        ax.set_xticks(rotation=45)
         ax.set_ylabel('Worth')
         ax.set_ylim(bottom=0)
+        ax.legend(loc='upper left')
         
         i += 1
+    plt.xticks(rotation=45)
+    axes[0].set_title(shop_converter[shop] + ' Forecasting Example')
     plt.show()
 
 
@@ -284,5 +284,5 @@ for shop in df_dict.keys():
 
 
 
-
+print(sample_test_index)
 
